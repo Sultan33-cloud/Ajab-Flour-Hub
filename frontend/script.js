@@ -3,7 +3,7 @@
 // ============================================
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:5000/api'; // Change this when deploying
+const API_BASE_URL = ' https://ajab-flour-hub.onrender.com'; // Change this when deploying
 
 // DOM Elements
 const elements = {
