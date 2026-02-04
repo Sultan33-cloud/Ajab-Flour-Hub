@@ -3,7 +3,7 @@
 // ============================================
 
 // API Configuration
-const API_BASE_URL = ' https://ajab-flour-hub.onrender.com'; // Change this when deploying
+const API_BASE_URL ='https://ajab-flour-hub.onrender.com'; // Production
 
 // DOM Elements
 const elements = {
@@ -47,7 +47,7 @@ const elements = {
 
 // Application State
 const state = {
-    currentUser: JSON.parse(localStorage.getItem('ajab_user')) || null,
+    currentUser: JSON.parse(localStorage.getItem('currentUser')) || null,
     products: [],
     currentFilter: 'all',
     chatHistory: [],
@@ -213,7 +213,7 @@ async function loadProducts() {
     try {
         showLoadingState('productGrid', 'Loading products...');
         
-        const response = await fetch(`${state.apiBaseUrl}/products`);
+        const response = await fetch(`${state.apiBaseUrl}/api/products`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -445,7 +445,7 @@ function showLoadingState(elementId, message = 'Loading...') {
 // ============================================
 async function loadCountries() {
     try {
-        const response = await fetch(`${state.apiBaseUrl}/countries`);
+        const response = await fetch(`${state.apiBaseUrl}/api/countries`);
         
         if (response.ok) {
             const data = await response.json();
@@ -524,7 +524,7 @@ async function handleLogin(e) {
     }
     
     try {
-        const response = await fetch(`${state.apiBaseUrl}/login`, {
+        const response = await fetch(`${state.apiBaseUrl}/api/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -536,8 +536,8 @@ async function handleLogin(e) {
         
         if (data.success) {
             // Save user data and token
-            localStorage.setItem('ajab_user', JSON.stringify(data.user));
-            localStorage.setItem('ajab_token', data.token);
+           localStorage.setItem('currentUser', JSON.stringify(data.user));
+           localStorage.setItem('token', data.token);
             
             state.currentUser = data.user;
             updateUIForUser();
@@ -579,7 +579,7 @@ async function handleRegister(e) {
     }
     
     try {
-        const response = await fetch(`${state.apiBaseUrl}/register`, {
+        const response = await fetch(`${state.apiBaseUrl}/api/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -598,8 +598,8 @@ async function handleRegister(e) {
         
         if (data.success) {
             // Save user data and token
-            localStorage.setItem('ajab_user', JSON.stringify(data.user));
-            localStorage.setItem('ajab_token', data.token);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
             
             state.currentUser = data.user;
             updateUIForUser();
@@ -621,8 +621,9 @@ async function handleRegister(e) {
 
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('ajab_user');
-        localStorage.removeItem('ajab_token');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+
         state.currentUser = null;
         updateUIForUser();
         showAlert('Logged out successfully', 'success');
@@ -638,6 +639,7 @@ function updateUIForUser() {
         if (loginBtn) {
             loginBtn.innerHTML = `<i class="fas fa-user"></i> ${state.currentUser.name.split(' ')[0]}`;
             loginBtn.onclick = logout;
+            loginBtn.className = 'btn btn-login'; // Keep login button styling
         }
         
         if (registerBtn) {
@@ -648,6 +650,7 @@ function updateUIForUser() {
         if (loginBtn) {
             loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
             loginBtn.onclick = () => showModal(elements.loginModal);
+            loginBtn.className = 'btn btn-login'; // Keep login button styling
         }
         
         if (registerBtn) {
@@ -697,12 +700,21 @@ async function handleOrderSubmit(e) {
         notes: `${notes} (Urgency: ${urgency})`
     };
     
+    // Prepare headers
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // Add authorization header if user is logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     try {
-        const response = await fetch(`${state.apiBaseUrl}/inquiries`, {
+        const response = await fetch(`${state.apiBaseUrl}/api/inquiries`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: headers,
             body: JSON.stringify(orderData)
         });
         
@@ -761,7 +773,7 @@ async function sendChatMessage() {
     showTypingIndicator();
     
     try {
-        const response = await fetch(`${state.apiBaseUrl}/chatbot/query`, {
+        const response = await fetch(`${state.apiBaseUrl}/api/chatbot/query`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

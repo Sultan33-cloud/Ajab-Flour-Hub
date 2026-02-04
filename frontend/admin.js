@@ -3,14 +3,14 @@
 // ============================================
 
 // API Configuration
-const API_BASE_URL = ' https://ajab-flour-hub.onrender.com';
+const API_BASE_URL = 'https://ajab-flour-hub.onrender.com'; // Update with your backend URL
 
 // ============================================
 // AUTHENTICATION CHECK
 // ============================================
 function checkAdminAuth() {
-    const user = JSON.parse(localStorage.getItem('ajab_user'));
-    const token = localStorage.getItem('ajab_token');
+    const user = JSON.parse(localStorage.getItem('currentUser')); // Changed from 'ajab_user'
+    const token = localStorage.getItem('token'); // Changed from 'ajab_token'
     
     if (!user || !token) {
         // Not logged in, redirect to main site
@@ -381,7 +381,7 @@ function loadPageData(page) {
 async function loadData() {
     try {
         // Try to load from API first
-        const productsResponse = await fetchWithAuth(`${API_BASE_URL}/products`);
+        const productsResponse = await fetchWithAuth(`${API_BASE_URL}/api/products`);
         if (productsResponse.ok) {
             const data = await productsResponse.json();
             state.products = data.products || [];
@@ -390,14 +390,14 @@ async function loadData() {
         }
         
         // Load orders from API
-        const ordersResponse = await fetchWithAuth(`${API_BASE_URL}/inquiries`);
+        const ordersResponse = await fetchWithAuth(`${API_BASE_URL}/api/inquiries`);
         if (ordersResponse.ok) {
             const data = await ordersResponse.json();
             state.orders = data.inquiries || [];
         }
         
         // Load dashboard stats
-        const statsResponse = await fetchWithAuth(`${API_BASE_URL}/dashboard/stats`);
+        const statsResponse = await fetchWithAuth(`${API_BASE_URL}/api/dashboard/stats`);
         if (statsResponse.ok) {
             const data = await statsResponse.json();
             updateStats(data.stats);
@@ -989,25 +989,34 @@ window.viewOrderDetails = function(orderId) {
     showModal(elements.orderDetailsModal);
 };
 
-window.updateOrderStatus = function(orderId) {
-    const order = state.orders.find(o => o.id === orderId);
+window.updateOrderStatus = async function(orderId) {
+    const newStatus = prompt('Enter new status (pending, processing, confirmed, delivered, cancelled):', 'pending');
     
-    if (!order) {
-        showAlert('Order not found', 'error');
-        return;
-    }
-    
-    const newStatus = prompt('Enter new status (pending, processing, completed, cancelled):', order.status);
-    
-    if (newStatus && ['pending', 'processing', 'completed', 'cancelled'].includes(newStatus.toLowerCase())) {
-        // Update order status
-        order.status = newStatus.toLowerCase();
-        
-        // Update UI
-        loadOrdersData();
-        loadRecentOrders();
-        
-        showAlert(`Order ${orderId} status updated to ${newStatus}`, 'success');
+    if (newStatus && ['pending', 'processing', 'confirmed', 'delivered', 'cancelled'].includes(newStatus.toLowerCase())) {
+        try {
+            const response = await fetchWithAuth(`${API_BASE_URL}/api/inquiries/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showAlert(`Order ${orderId} status updated to ${newStatus}`, 'success');
+                // Reload data
+                await loadData();
+                loadOrdersData();
+                loadRecentOrders();
+            } else {
+                showAlert(data.error || 'Failed to update status', 'error');
+            }
+        } catch (error) {
+            console.error('Update status error:', error);
+            showAlert('Failed to update order status', 'error');
+        }
     }
 };
 
@@ -1121,9 +1130,9 @@ window.printOrder = function(orderId) {
 // ============================================
 function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
-        // Clear any stored data
-        localStorage.removeItem('ajab_user');
-        localStorage.removeItem('ajab_token');
+        // Clear stored data (use consistent keys)
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
         
         // Redirect to main site
         window.location.href = 'index.html';
