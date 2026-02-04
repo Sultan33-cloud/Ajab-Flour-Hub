@@ -15,10 +15,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ========== MIDDLEWARE SETUP ==========
+// TEMPORARY FIX: Allow all origins for testing
 app.use(cors({
-    origin: '*', // Allow all origins (for testing)
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+    origin: '*', // Allow ALL origins temporarily
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
