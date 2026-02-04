@@ -1621,3 +1621,56 @@ body {
         break-inside: avoid;
     }
 }
+
+/* ===== ADMIN DARK MODE ===== */
+[data-theme="dark"] .admin-container {
+    --sidebar-bg: #0f172a;
+    --header-bg: #1e293b;
+    --card-bg: #1e293b;
+    --body-bg: #0f172a;
+    --dark: #f1f5f9;
+    --dark-light: #cbd5e1;
+    --light: #334155;
+    --border: 1px solid #475569;
+}
+
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .chart-card,
+[data-theme="dark"] .activity-card,
+[data-theme="dark"] .analytics-card {
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .sidebar-nav a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .data-table th {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Admin theme toggle */
+.admin-theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s ease;
+}
+
+.admin-theme-toggle:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-dark);
+}

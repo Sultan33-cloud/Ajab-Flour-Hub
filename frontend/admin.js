@@ -208,6 +208,23 @@ async function initializeAdminDashboard() {
         
         // Show welcome message
         showAlert(`Welcome, ${user.name}! Admin dashboard loaded.`, 'success');
+
+        // Add admin theme toggle
+function addAdminThemeToggle() {
+    const themeToggle = document.createElement('button');
+    themeToggle.className = 'admin-theme-toggle';
+    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    themeToggle.id = 'adminThemeToggle';
+    document.body.appendChild(themeToggle);
+    
+    themeToggle.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        applyTheme(!isDark);
+    });
+}
+
+// Call this in initializeAdminDashboard after loading
+addAdminThemeToggle();
         
     } catch (error) {
         console.error('Initialization error:', error);

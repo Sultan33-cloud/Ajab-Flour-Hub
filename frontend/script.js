@@ -3,7 +3,7 @@
 // ============================================
 
 // API Configuration
-const API_BASE_URL ='https://ajab-flour-hub.onrender.com'; // Production
+const API_BASE_URL = 'https://ajab-flour-hub.onrender.com'; // Production
 
 // DOM Elements
 const elements = {
@@ -63,12 +63,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initializeApp() {
     try {
+        console.log('=== Initializing App ===');
+        
         // Setup event listeners
         setupEventListeners();
         
         // Load initial data
+        console.log('Loading products...');
         await loadProducts();
+        
+        console.log('Loading countries...');
         await loadCountries();
+        
+        // Debug: Check if products loaded
+        console.log('Products loaded:', state.products.length);
+        console.log('Product select element:', document.getElementById('product'));
+        
+        // Force update dropdown
+        setTimeout(() => {
+            if (document.getElementById('product') && state.products.length > 0) {
+                updateProductSelect();
+                console.log('Dropdown updated after delay');
+            }
+        }, 500);
         
         // Update UI based on user state
         updateUIForUser();
@@ -80,6 +97,8 @@ async function initializeApp() {
         setTimeout(() => {
             showAlert('Welcome to Ajab Flour Digital Hub!', 'info');
         }, 1000);
+        
+        console.log('=== App Initialized ===');
         
     } catch (error) {
         console.error('Initialization error:', error);
@@ -154,6 +173,16 @@ function setupEventListeners() {
         elements.alert.classList.remove('active');
     });
     
+    // Product dropdown change listener
+    const productSelect = document.getElementById('product');
+    if (productSelect) {
+        productSelect.addEventListener('change', function() {
+            console.log('Product selected:', this.value);
+            const selectedProduct = state.products.find(p => p.id == this.value);
+            console.log('Selected product details:', selectedProduct);
+        });
+    }
+    
     // Close alert after 5 seconds
     setInterval(() => {
         if (elements.alert.classList.contains('active')) {
@@ -211,6 +240,7 @@ function showAlert(message, type = 'success') {
 // ============================================
 async function loadProducts() {
     try {
+        console.log('Loading products from:', `${state.apiBaseUrl}/api/products`);
         showLoadingState('productGrid', 'Loading products...');
         
         const response = await fetch(`${state.apiBaseUrl}/api/products`);
@@ -220,10 +250,16 @@ async function loadProducts() {
         }
         
         const data = await response.json();
+        console.log('Products API response:', data);
         
-        if (data.success) {
+        if (data.success && data.products) {
             state.products = data.products;
+            console.log(`Loaded ${state.products.length} products`);
+            
+            // Render products AND update dropdown
             renderProducts();
+            updateProductSelect();
+            
         } else {
             throw new Error(data.error || 'Failed to load products');
         }
@@ -236,6 +272,7 @@ async function loadProducts() {
 }
 
 function loadSampleProducts() {
+    console.log('Loading sample products...');
     state.products = [
         {
             id: 1,
@@ -305,7 +342,9 @@ function loadSampleProducts() {
         }
     ];
     
+    console.log(`Loaded ${state.products.length} sample products`);
     renderProducts();
+    updateProductSelect();
 }
 
 function renderProducts() {
@@ -385,12 +424,25 @@ function formatCategory(category) {
 
 function updateProductSelect() {
     const productSelect = document.getElementById('product');
-    if (!productSelect) return;
+    if (!productSelect) {
+        console.error('Product select element not found!');
+        return;
+    }
     
     // Clear existing options except first
-    while (productSelect.options.length > 1) {
-        productSelect.remove(1);
+    productSelect.innerHTML = '<option value="">Select Product</option>';
+    
+    // Check if we have products
+    if (!state.products || state.products.length === 0) {
+        console.warn('No products available to populate dropdown');
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Loading products...';
+        productSelect.appendChild(option);
+        return;
     }
+    
+    console.log(`Populating dropdown with ${state.products.length} products`);
     
     // Add products to select
     state.products.forEach(product => {
@@ -399,11 +451,16 @@ function updateProductSelect() {
         option.textContent = `${product.name} (${product.weight}) - KSh ${product.price}`;
         productSelect.appendChild(option);
     });
+    
+    console.log('Product dropdown populated successfully');
 }
 
 function orderProduct(productId) {
     const product = state.products.find(p => p.id === productId);
-    if (!product) return;
+    if (!product) {
+        showAlert('Product not found', 'error');
+        return;
+    }
     
     // Update product select
     const productSelect = document.getElementById('product');
@@ -473,6 +530,7 @@ function populateCountrySelects(countries) {
     // Populate country select in order form
     const countrySelect = document.getElementById('country');
     if (countrySelect) {
+        countrySelect.innerHTML = '<option value="">Select Country</option>';
         countries.forEach(country => {
             const option = document.createElement('option');
             option.value = country.name;
@@ -484,6 +542,7 @@ function populateCountrySelects(countries) {
     // Populate country select in registration
     const regCountrySelect = document.getElementById('regCountry');
     if (regCountrySelect) {
+        regCountrySelect.innerHTML = '<option value="">Select Country</option>';
         countries.forEach(country => {
             const option = document.createElement('option');
             option.value = country.name;
@@ -513,10 +572,11 @@ function populateCountrySelects(countries) {
 // ============================================
 async function handleLogin(e) {
     e.preventDefault();
-
+    
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-
+    
+    // Debug logging
     console.log('=== LOGIN DEBUG ===');
     console.log('Email:', email);
     console.log('Password:', password ? '***' : 'empty');
@@ -703,6 +763,11 @@ async function handleOrderSubmit(e) {
         return;
     }
     
+    if (productId === "") {
+        showAlert('Please select a product', 'error');
+        return;
+    }
+    
     // Prepare order data
     const orderData = {
         name,
@@ -714,6 +779,8 @@ async function handleOrderSubmit(e) {
         country,
         notes: `${notes} (Urgency: ${urgency})`
     };
+    
+    console.log('Submitting order:', orderData);
     
     // Prepare headers
     const headers = {
@@ -734,6 +801,7 @@ async function handleOrderSubmit(e) {
         });
         
         const data = await response.json();
+        console.log('Order response:', data);
         
         if (data.success) {
             showAlert('Order inquiry submitted successfully! Our sales team will contact you within 24 hours.', 'success');
@@ -741,8 +809,15 @@ async function handleOrderSubmit(e) {
             // Reset form
             elements.orderForm.reset();
             
+            // Reset product dropdown
+            updateProductSelect();
+            
             // Add chatbot notification
-            addChatbotMessage(`Thank you for your order inquiry! Reference #ORD${data.inquiry.id}. We'll contact you at ${email}`, 'bot');
+            if (data.order_id) {
+                addChatbotMessage(`Thank you for your order inquiry! Reference #${data.order_id}. We'll contact you at ${email}`, 'bot');
+            } else {
+                addChatbotMessage(`Thank you for your order inquiry! We'll contact you at ${email}`, 'bot');
+            }
         } else {
             showAlert(data.error || 'Failed to submit order', 'error');
         }
@@ -880,9 +955,373 @@ function removeTypingIndicator() {
 }
 
 // ============================================
+// DEBUG FUNCTIONS
+// ============================================
+function testProductDropdown() {
+    console.log('=== Testing Product Dropdown ===');
+    
+    // Check if element exists
+    const productSelect = document.getElementById('product');
+    console.log('1. Product select element exists:', !!productSelect);
+    
+    // Check current state
+    console.log('2. Number of products in state:', state.products.length);
+    console.log('3. Products in state:', state.products);
+    
+    // Check dropdown options
+    if (productSelect) {
+        console.log('4. Dropdown options count:', productSelect.options.length);
+        console.log('5. Dropdown options:', 
+            Array.from(productSelect.options).map(opt => ({
+                value: opt.value,
+                text: opt.text
+            }))
+        );
+    }
+    
+    // Try to manually populate
+    updateProductSelect();
+    console.log('6. Dropdown refreshed');
+}
+
+function refreshProductDropdown() {
+    console.log('Manually refreshing product dropdown...');
+    console.log('Current products:', state.products);
+    updateProductSelect();
+}
+
+// ============================================
+// THEME SYSTEM - DARK/LIGHT MODE WITH STARS
+// ============================================
+
+// Theme state
+const themeState = {
+    isDarkMode: localStorage.getItem('theme') === 'dark',
+    stars: [],
+    starCount: 100
+};
+
+// Initialize theme system
+function initializeThemeSystem() {
+    console.log('🎨 Initializing theme system...');
+    
+    // Create theme elements
+    createThemeElements();
+    
+    // Wait a bit for DOM to be ready, then create toggle button
+    setTimeout(() => {
+        createThemeToggle();
+        
+        // Apply saved theme
+        applyTheme(themeState.isDarkMode);
+        
+        // Setup event listener
+        const toggleBtn = document.getElementById('themeToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleTheme);
+        }
+        
+        // Generate stars if dark mode
+        if (themeState.isDarkMode) {
+            setTimeout(generateStars, 100);
+        }
+        
+        console.log('🎨 Theme system initialized successfully');
+    }, 500);
+}
+
+// Create theme toggle button
+function createThemeToggle() {
+    console.log('🎨 Creating theme toggle button...');
+    
+    // First check if navbar exists
+    const navbar = document.querySelector('.nav-links');
+    if (!navbar) {
+        console.warn('❌ Navbar not found, will retry...');
+        setTimeout(createThemeToggle, 100);
+        return;
+    }
+    
+    // Check if button already exists
+    if (document.getElementById('themeToggle')) {
+        console.log('✅ Theme toggle already exists');
+        return;
+    }
+    
+    const themeToggle = document.createElement('li');
+    themeToggle.innerHTML = `
+        <button class="btn btn-theme-toggle" id="themeToggle">
+            <i class="fas ${themeState.isDarkMode ? 'fa-sun' : 'fa-moon'}"></i>
+            <span>${themeState.isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+    `;
+    
+    // Insert before the last 2 buttons (login/register/admin)
+    const lastIndex = navbar.children.length;
+    const insertPosition = Math.max(0, lastIndex - 3);
+    navbar.insertBefore(themeToggle, navbar.children[insertPosition]);
+    
+    console.log('✅ Theme toggle button created');
+}
+
+// Create sunset and stars containers
+function createThemeElements() {
+    console.log('🎨 Creating theme elements...');
+    
+    // Check if elements already exist
+    if (!document.querySelector('.sunset-overlay')) {
+        // Sunset overlay for light mode
+        const sunsetOverlay = document.createElement('div');
+        sunsetOverlay.className = 'sunset-overlay';
+        document.body.appendChild(sunsetOverlay);
+        console.log('✅ Sunset overlay created');
+    }
+    
+    if (!document.getElementById('starsContainer')) {
+        // Stars container for dark mode
+        const starsContainer = document.createElement('div');
+        starsContainer.className = 'stars-container';
+        starsContainer.id = 'starsContainer';
+        document.body.appendChild(starsContainer);
+        console.log('✅ Stars container created');
+    }
+}
+
+// Apply theme - FIXED VERSION
+function applyTheme(isDark) {
+    console.log(`🎨 Applying ${isDark ? 'dark' : 'light'} theme...`);
+    
+    const theme = isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // Update toggle button if it exists
+    updateThemeToggle(isDark);
+    
+    // Toggle stars
+    const starsContainer = document.getElementById('starsContainer');
+    if (starsContainer) {
+        if (isDark) {
+            setTimeout(() => {
+                generateStars();
+                console.log('⭐ Stars generated');
+            }, 200);
+        } else {
+            clearStars();
+            console.log('⭐ Stars cleared');
+        }
+    }
+    
+    // Update localStorage
+    localStorage.setItem('theme', theme);
+    themeState.isDarkMode = isDark;
+    
+    console.log(`✅ ${isDark ? 'Dark' : 'Light'} theme applied`);
+}
+
+// Update theme toggle button
+function updateThemeToggle(isDark) {
+    const toggleBtn = document.getElementById('themeToggle');
+    if (toggleBtn) {
+        const icon = toggleBtn.querySelector('i');
+        const text = toggleBtn.querySelector('span');
+        
+        if (icon) {
+            icon.className = `fas ${isDark ? 'fa-sun' : 'fa-moon'}`;
+        }
+        
+        if (text) {
+            text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        }
+        
+        console.log('✅ Theme toggle updated');
+    } else {
+        console.log('ℹ️ Theme toggle button not found, will create it');
+        setTimeout(() => createThemeToggle(), 100);
+    }
+}
+
+// Toggle theme
+function toggleTheme() {
+    console.log('🎨 Toggling theme...');
+    const newTheme = !themeState.isDarkMode;
+    applyTheme(newTheme);
+}
+
+// Generate stars for dark mode
+function generateStars() {
+    console.log('⭐ Generating stars...');
+    
+    const starsContainer = document.getElementById('starsContainer');
+    if (!starsContainer) {
+        console.warn('❌ Stars container not found');
+        return;
+    }
+    
+    clearStars();
+    
+    // Create stars
+    for (let i = 0; i < themeState.starCount; i++) {
+        const star = document.createElement('div');
+        const size = Math.random() * 3 + 1;
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const duration = Math.random() * 3 + 2;
+        
+        star.className = 'star';
+        if (size < 1.5) {
+            star.classList.add('small');
+        } else if (size < 2.5) {
+            star.classList.add('medium');
+        } else {
+            star.classList.add('large');
+        }
+        
+        star.style.cssText = `
+            left: ${x}vw;
+            top: ${y}vh;
+            width: ${size}px;
+            height: ${size}px;
+            animation-duration: ${duration}s;
+            animation-delay: ${Math.random() * duration}s;
+            opacity: ${Math.random() * 0.7 + 0.3};
+        `;
+        
+        starsContainer.appendChild(star);
+        themeState.stars.push(star);
+    }
+    
+    console.log(`✅ ${themeState.starCount} stars created`);
+}
+
+// Clear stars
+function clearStars() {
+    const starsContainer = document.getElementById('starsContainer');
+    if (!starsContainer) return;
+    
+    starsContainer.innerHTML = '';
+    themeState.stars = [];
+    console.log('✅ Stars cleared');
+}
+
+// ============================================
+// APPLY ENHANCED BORDERS
+// ============================================
+function applyEnhancedBorders() {
+    console.log('🎨 Applying enhanced borders...');
+    
+    // List of selectors to enhance
+    const selectors = [
+        '.hero .container',
+        '.about-content',
+        '.product-card',
+        '.order-form',
+        '.order-info',
+        '.retailer-card',
+        '.feature',
+        '.stat'
+    ];
+    
+    let enhancedCount = 0;
+    
+    selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            if (!element.classList.contains('enhanced-border')) {
+                element.classList.add('enhanced-border');
+                enhancedCount++;
+            }
+        });
+    });
+    
+    console.log(`✅ Enhanced ${enhancedCount} elements with borders`);
+}
+
+// ============================================
+// UPDATE TYPOGRAPHY
+// ============================================
+function updateTypography() {
+    console.log('🎨 Updating typography...');
+    
+    // Add Inter font if not already loaded
+    if (!document.querySelector('link[href*="Inter"]')) {
+        const fontLink = document.createElement('link');
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap';
+        fontLink.rel = 'stylesheet';
+        document.head.appendChild(fontLink);
+        console.log('✅ Inter font loaded');
+    }
+    
+    // Apply font classes to elements
+    document.querySelectorAll('h1, h2, h3').forEach(el => {
+        el.style.fontFamily = "'Poppins', sans-serif";
+    });
+    
+    document.querySelectorAll('p, .product-description, .section-subtitle').forEach(el => {
+        el.style.fontFamily = "'Inter', sans-serif";
+    });
+    
+    console.log('✅ Typography updated');
+}
+
+// ============================================
+// INITIALIZE ENHANCEMENTS
+// ============================================
+function initializeEnhancements() {
+    console.log('🚀 Initializing all enhancements...');
+    
+    // Add Inter font to head first
+    const interFont = document.createElement('link');
+    interFont.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap';
+    interFont.rel = 'stylesheet';
+    document.head.appendChild(interFont);
+    
+    // Initialize theme system after a short delay
+    setTimeout(initializeThemeSystem, 300);
+    
+    // Apply other enhancements after theme
+    setTimeout(() => {
+        applyEnhancedBorders();
+        updateTypography();
+        
+        console.log('🎉 All enhancements initialized successfully!');
+    }, 1000);
+}
+
+// Run when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM loaded, starting enhancements...');
+    initializeEnhancements();
+});
+
+// Also run when page is fully loaded
+window.addEventListener('load', function() {
+    console.log('🖼️ Page fully loaded, finalizing enhancements...');
+    // Final check for theme toggle
+    if (!document.getElementById('themeToggle')) {
+        setTimeout(createThemeToggle, 500);
+    }
+});
+
+// Export functions for debugging
+window.toggleTheme = toggleTheme;
+window.generateStars = generateStars;
+window.clearStars = clearStars;
+window.applyTheme = applyTheme;
+
+console.log('🎨 Theme system script loaded');
+
+// ============================================
 // EXPORT FUNCTIONS FOR HTML ONCLICK
 // ============================================
 // Make functions available globally for onclick attributes
 window.orderProduct = orderProduct;
 window.logout = logout;
 window.toggleChatbot = toggleChatbot;
+window.testProductDropdown = testProductDropdown;
+window.refreshProductDropdown = refreshProductDropdown;
+
+// Debug on load
+console.log('Script loaded successfully');
+console.log('API Base URL:', API_BASE_URL);
+console.log('Current user:', state.currentUser);
+console.log('Products loaded:', state.products.length);
