@@ -514,13 +514,13 @@ function populateCountrySelects(countries) {
 async function handleLogin(e) {
     e.preventDefault();
 
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
     console.log('=== LOGIN DEBUG ===');
     console.log('Email:', email);
     console.log('Password:', password ? '***' : 'empty');
     console.log('API URL:', `${state.apiBaseUrl}/api/login`);
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
     
     // Basic validation
     if (!email || !password) {

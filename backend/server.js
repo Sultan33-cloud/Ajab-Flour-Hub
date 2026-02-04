@@ -17,8 +17,14 @@ const PORT = process.env.PORT || 5000;
 // ========== MIDDLEWARE SETUP ==========
 // TEMPORARY FIX: Allow all origins for testing
 app.use(cors({
-    origin: '*', // Allow ALL origins temporarily
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: [
+        'http://localhost:5500',
+        'http://127.0.0.1:5500', 
+        'http://localhost:3000',
+        'https://ajab-flour-hub.netlify.app', // My Netlify URL
+        'https://*.netlify.app'               // Allow all Netlify
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

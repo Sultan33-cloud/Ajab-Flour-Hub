@@ -183,7 +183,8 @@
             alert.className = 'alert';
             
             try {
-                const response = await fetch(`${API_BASE_URL}/login`, {
+                // ✅ FIXED: Added /api/ prefix
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -201,8 +202,8 @@
                     }
                     
                     // Save user data and token
-                    localStorage.setItem('ajab_user', JSON.stringify(data.user));
-                    localStorage.setItem('ajab_token', data.token);
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    localStorage.setItem('token', data.token);
                     
                     // Redirect to admin dashboard
                     window.location.href = 'admin.html';
