@@ -513,6 +513,11 @@ function populateCountrySelects(countries) {
 // ============================================
 async function handleLogin(e) {
     e.preventDefault();
+
+    console.log('=== LOGIN DEBUG ===');
+    console.log('Email:', email);
+    console.log('Password:', password ? '***' : 'empty');
+    console.log('API URL:', `${state.apiBaseUrl}/api/login`);
     
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -524,6 +529,8 @@ async function handleLogin(e) {
     }
     
     try {
+        console.log('Attempting login for:', email);
+        
         const response = await fetch(`${state.apiBaseUrl}/api/login`, {
             method: 'POST',
             headers: {
@@ -533,11 +540,12 @@ async function handleLogin(e) {
         });
         
         const data = await response.json();
+        console.log('Login response:', data);
         
         if (data.success) {
             // Save user data and token
-           localStorage.setItem('currentUser', JSON.stringify(data.user));
-           localStorage.setItem('token', data.token);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
             
             state.currentUser = data.user;
             updateUIForUser();
@@ -547,6 +555,13 @@ async function handleLogin(e) {
             
             // Reset form
             elements.loginForm.reset();
+            
+            // If admin, redirect to admin panel
+            if (data.user.role === 'admin' || data.user.role === 'sales') {
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1500);
+            }
         } else {
             showAlert(data.error || 'Login failed', 'error');
         }
