@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajab Flour - Premium Quality Flours Across Africa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://img.icons8.com/color/96/wheat.png" type="image/x-icon">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <img src="https://img.icons8.com/color/96/000000/wheat.png" alt="Ajab Flour Logo" class="logo-img">
+                <span class="logo-text">AJAB LTD</span>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#products">Products</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#retailers">Retailers</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><button class="btn btn-login" id="loginBtn">Login</button></li>
+                <li><button class="btn btn-primary" id="registerBtn">Register</button></li>
+                <li><a href="admin.html" class="btn btn-admin"><i class="fas fa-chart-line"></i> Admin</a></li>
+                <li><a href="admin-login.html" class="btn btn-admin"><i class="fas fa-lock"></i> Admin/Sales Person</a></li>
+            </ul>
+            <div class="hamburger" id="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Premium Quality Flours For Every African Kitchen</h1>
+                <p>From the Kenya's finest maize to  best millet, Ajab Flour delivers nutrition, quality, and taste across Africa.</p>
+                <div class="hero-buttons">
+                    <a href="#products" class="btn btn-primary btn-large">Shop Now</a>
+                    <a href="#bulk-order" class="btn btn-secondary btn-large">Bulk Order</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1627485937980-221c88ac04f9?q=80&w=883&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Flour Products">
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+<section class="about" id="about">
+    <div class="container">
+        <div class="about-content">
+            <div class="about-image">
+                <img src="https://greenspoon.co.ke/wp-content/uploads/2022/12/Greenspoon-Kenya-Ajab-Fortified-All-Purpose-Home-Baking-Flour-2kg.jpg" alt="Ajab Flour Factory">
+            </div>
+            <div class="about-text">
+                <h2 class="section-title">About Ajab Flour</h2>
+                <h3>Quality Flours Across Africa Since 2000s</h3>
+                
+                <div class="about-features">
+                    <div class="feature">
+                        <i class="fas fa-award"></i>
+                        <h4>Premium Quality</h4>
+                        <p>We use only the finest grains sourced directly from African farmers.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>Fortified Nutrition</h4>
+                        <p>Our flours are fortified with essential vitamins A, Iron, and Zinc.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <i class="fas fa-truck"></i>
+                        <h4>Pan-African Reach</h4>
+                        <p>Delivering quality flour to 8+ African countries with reliable supply chains.</p>
+                    </div>
+                </div>
+                
+                <div class="about-story">
+                    <h4>Our Story</h4>
+                    <p>Ajab is a prominent brand of fortified wheat and maize flours in Kenya, produced by Grain Industries Limited (GIL), known for high-quality, toxin-safe products used for baking and cooking. It is popular for making chapati, mandazi, and bread.</p>
+                    <p>Founded in the early 2000s, Ajab Flour has grown to become a trusted name in households and businesses across Africa. With a commitment to quality and nutrition, we have expanded our product range to include maize flour, millet flour, self-raising flour, and more.</p>
+                    <p>Our mission is simple: <strong>Provide affordable, nutritious, and high-quality flours to every African kitchen.</strong> We believe that good nutrition starts with quality ingredients, and we're committed to being part of Africa's food security solution.</p>
+                </div>
+                
+                <div class="about-stats">
+                    <div class="stat">
+                        <h4>25+</h4>
+                        <p>Years of Experience</p>
+                    </div>
+                    <div class="stat">
+                        <h4>5+</h4>
+                        <p>African Countries</p>
+                    </div>
+                    <div class="stat">
+                        <h4>50,000+</h4>
+                        <p>Happy Customers</p>
+                    </div>
+                    <div class="stat">
+                        <h4>5</h4>
+                        <p>Production Facilities</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="products" id="products">
+    <div class="container">
+        <h2 class="section-title">Our Premium Products</h2>
+        <p class="section-subtitle">Fortified with essential vitamins and minerals for  families</p>
+        
+        <div class="product-filters">
+            <button class="filter-btn active" data-filter="all">All Products</button>
+            <button class="filter-btn" data-filter="maize_flour">Maize Flour</button>
+            <button class="filter-btn" data-filter="millet_flour">Millet Flour</button>
+            <button class="filter-btn" data-filter="atta">Lottus Flour</button>
+            <button class="filter-btn" data-filter="self_raising">Self Raising</button>
+        </div>
+        
+        <div class="product-grid">
+            <!-- Product 1: Maize Flour -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1545587195-a625d872ca82?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Fortified Maize Flour">
+                    <div class="product-featured">Bestseller</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Maize Flour</div>
+                    <h3 class="product-name">Ajab Fortified Maize Flour</h3>
+                    <p class="product-description">Perfect for soft, delicious ugali. Fortified with Vitamin A, Iron, and Zinc.</p>
+                    <div class="product-meta">
+                        <div class="product-price">KSh 250</div>
+                        <div class="product-weight">2kg, 5kg, 25kg</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="orderProduct(1)">Order Now</button>
+                </div>
+            </div>
+            
+            <!-- Product 2: Millet Flour -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1768729339998-909158957162?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Millet Flour">
+                    <div class="product-featured">Popular</div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Millet Flour</div>
+                    <h3 class="product-name">Ajab Millet Flour</h3>
+                    <p class="product-description">Gluten-free, high-fiber flour perfect for chapatis and porridge.</p>
+                    <div class="product-meta">
+                        <div class="product-price">KSh 320</div>
+                        <div class="product-weight">1kg, 2kg, 10kg</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="orderProduct(2)">Order Now</button>
+                </div>
+            </div>
+            
+            <!-- Product 3: Lottus Flour -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1586137712370-9b450509c587?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Fortified Atta">
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Lottus Flour</div>
+                    <h3 class="product-name">Ajab Fortified Lotus</h3>
+                    <p class="product-description">Whole wheat Lotus for soft, fluffy chapatis and mandazi.</p>
+                    <div class="product-meta">
+                        <div class="product-price">KSh 280</div>
+                        <div class="product-weight">2kg, 5kg</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="orderProduct(3)">Order Now</button>
+                </div>
+            </div>
+            
+            <!-- Product 4: Self Raising Flour -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1714842981153-ffeaf74e7a1a?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Self Raising</div>
+                    <h3 class="product-name">Ajab Self Raising Flour</h3>
+                    <p class="product-description">Perfect for cakes, breads, and pastries. Ghee enriched.</p>
+                    <div class="product-meta">
+                        <div class="product-price">KSh 300</div>
+                        <div class="product-weight">1kg, 2kg</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="orderProduct(4)">Order Now</button>
+                </div>
+            </div>
+            
+            <!-- Product 5: Atta Flour -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1732565649629-eb4932a1ec09?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Baking Flour">
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Atta Flour</div>
+                    <h3 class="product-name">Ajab Atta Flour</h3>
+                    <p class="product-description">All-purpose flour for all your baking needs.</p>
+                    <div class="product-meta">
+                        <div class="product-price">KSh 270</div>
+                        <div class="product-weight">2kg, 5kg</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="orderProduct(5)">Order Now</button>
+                </div>
+            </div>
+            
+            <!-- Product 6: Whole Wheat Flour -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.unsplash.com/photo-1556910116-e220f7127371?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Whole Wheat Flour">
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Whole Wheat</div>
+                    <h3 class="product-name">Ajab Whole Wheat Flour</h3>
+                    <p class="product-description">100% whole wheat for nutritious breads and pastries.</p>
+                    <div class="product-meta">
+                        <div class="product-price">KSh 290</div>
+                        <div class="product-weight">2kg, 5kg</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="orderProduct(6)">Order Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Bulk Order Section -->
+    <section class="bulk-order" id="bulk-order">
+        <div class="container">
+            <h2 class="section-title">Bulk Order Inquiry</h2>
+            <p class="section-subtitle">For restaurants, schools, hotels, and retailers across Africa</p>
+            
+            <div class="order-container">
+                <form class="order-form" id="orderForm">
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required placeholder="John Kamau">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required placeholder="john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <div class="phone-input">
+                                <select id="countryCode" class="country-code">
+                                    <option value="+254">🇰🇪 +254</option>
+                                    <option value="+255">🇹🇿 +255</option>
+                                    <option value="+256">🇺🇬 +256</option>
+                                    <option value="+250">🇷🇼 +250</option>
+                                    <option value="+27">🇿🇦 +27</option>
+                                </select>
+                                <input type="tel" id="phone" placeholder="712 345 678" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="country">Country *</label>
+                            <select id="country" name="country" required>
+                                <option value="">Select Country</option>
+                                <option value="Kenya">Kenya 🇰🇪</option>
+                                <option value="Tanzania">Tanzania 🇹🇿</option>
+                                <option value="Uganda">Uganda 🇺🇬</option>
+                                <option value="Rwanda">Rwanda 🇷🇼</option>
+                                <option value="South Africa">South Africa 🇿🇦</option>
+                                <option value="Nigeria">Nigeria 🇳🇬</option>
+                                <option value="Ghana">Ghana 🇬🇭</option>
+                                <option value="Ethiopia">Ethiopia 🇪🇹</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="product">Product *</label>
+                            <select id="product" name="product" required>
+                                <option value="">Select Product</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quantity">Quantity (Kgs) *</label>
+                            <input type="number" id="quantity" name="quantity" min="50" required placeholder="Minimum 50 kg">
+                        </div>
+                        <div class="form-group">
+                            <label for="urgency">Urgency</label>
+                            <select id="urgency" name="urgency">
+                                <option value="normal">Normal (1-2 weeks)</option>
+                                <option value="urgent">Urgent (3-5 days)</option>
+                                <option value="immediate">Immediate (1-2 days)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="delivery">Delivery Address *</label>
+                        <textarea id="delivery" name="delivery" rows="3" required placeholder="Full address with town/city"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Additional Notes</label>
+                        <textarea id="notes" name="notes" rows="2" placeholder="Special requirements, delivery timing, etc."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <i class="fas fa-paper-plane"></i> Submit Inquiry
+                    </button>
+                    <p class="form-note">Our sales team will contact you within 24 hours with a quotation.</p>
+                </form>
+                
+                <div class="order-info">
+                    <h3><i class="fas fa-info-circle"></i> Why Order from Ajab?</h3>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Premium quality fortified flours</li>
+                        <li><i class="fas fa-check-circle"></i> Competitive wholesale prices</li>
+                        <li><i class="fas fa-check-circle"></i> Delivery across Africa</li>
+                        <li><i class="fas fa-check-circle"></i> Bulk discounts available</li>
+                        <li><i class="fas fa-check-circle"></i> Flexible payment options</li>
+                        <li><i class="fas fa-check-circle"></i> Reliable supply chain</li>
+                    </ul>
+                    
+                    <div class="contact-box">
+                        <h4><i class="fas fa-headset"></i> Need Help?</h4>
+                        <p>Call our sales team:</p>
+                        <p class="phone-number">+254 700 000 000</p>
+                        <p>Email: sales@ajabflour.co.ke</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Retailers Section -->
+    <section class="retailers" id="retailers">
+        <div class="container">
+            <h2 class="section-title">Find Retailers</h2>
+            <p class="section-subtitle">Available in stores across Africa</p>
+            
+            <div class="retailer-grid">
+                <div class="retailer-card">
+                    <i class="fas fa-store"></i>
+                    <h3>Kenya</h3>
+                    <ul>
+                        <li>Carrefour Supermarkets</li>
+                        <li>Naivas Supermarkets</li>
+                        <li>Quickmart</li>
+                        <li>Tuskys Supermarkets</li>
+                        <li>Chandarana Foodplus</li>
+                    </ul>
+                </div>
+                
+                <div class="retailer-card">
+                    <i class="fas fa-store"></i>
+                    <h3>Tanzania</h3>
+                    <ul>
+                        <li>Shoprite Tanzania</li>
+                        <li>Nakumatt Tanzania</li>
+                        <li>Shrijee's Supermarket</li>
+                        <li>Game Stores</li>
+                    </ul>
+                </div>
+                
+                <div class="retailer-card">
+                    <i class="fas fa-store"></i>
+                    <h3>Uganda</h3>
+                    <ul>
+                        <li>Game Uganda</li>
+                        <li>Shoprite Uganda</li>
+                        <li>Capital Shoppers</li>
+                        <li>Quality Supermarket</li>
+                    </ul>
+                </div>
+                
+                <div class="retailer-card">
+                    <i class="fas fa-globe"></i>
+                    <h3>Online Stores</h3>
+                    <ul>
+                        <li>Jumia Kenya</li>
+                        <li>Jumia Uganda</li>
+                        <li>Jumia Nigeria</li>
+                        <li>Kilimall</li>
+                        <li>Masoko</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chatbot Widget -->
+    <div class="chatbot-widget" id="chatbotWidget">
+        <div class="chatbot-header">
+            <div class="chatbot-title">
+                <i class="fas fa-robot"></i>
+                <h4>Ajab Assistant</h4>
+            </div>
+            <button class="chatbot-close" id="closeChatbot">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chatbot-messages" id="chatbotMessages">
+            <div class="chatbot-message bot">
+                <div class="message-content">
+                    Hello! I'm Ajab Assistant. I can help you with:
+                    <ul>
+                        <li>Product information</li>
+                        <li>Pricing and delivery</li>
+                        <li>Order status</li>
+                        <li>Store locations</li>
+                    </ul>
+                    How can I help you today?
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatbotInput" placeholder="Type your question here...">
+            <button id="sendChatbot" class="btn-send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    
+    <button class="chatbot-toggle" id="toggleChatbot">
+        <i class="fas fa-comment-dots"></i>
+        <span class="chatbot-notification">1</span>
+    </button>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="https://img.icons8.com/color/96/000000/wheat.png" alt="Ajab Logo">
+                        <h3>AJAB FLOUR</h3>
+                    </div>
+                    <p>Providing quality fortified flours across Africa since 2000s. Our mission is to deliver nutrition and taste to every African kitchen.</p>
+                    <div class="footer-social">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#products">Products</a></li>
+                        <li><a href="#bulk-order">Bulk Orders</a></li>
+                        <li><a href="#retailers">Find Retailers</a></li>
+                        <li><a href="admin.html">Admin Dashboard</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> Nairobi, Kenya</li>
+                        <li><i class="fas fa-phone"></i> +254 700 000 000</li>
+                        <li><i class="fas fa-envelope"></i> info@ajabflour.co.ke</li>
+                        <li><i class="fas fa-clock"></i> Mon-Fri: 8:00 AM - 5:00 PM</li>
+                        <li><i class="fas fa-globe"></i> www.ajabflour.co.ke</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Countries We Serve</h4>
+                    <div class="countries-grid">
+                        <span class="country-tag">🇰🇪 Kenya</span>
+                        <span class="country-tag">🇹🇿 Tanzania</span>
+                        <span class="country-tag">🇺🇬 Uganda</span>
+                        <span class="country-tag">🇷🇼 Rwanda</span>
+                        <span class="country-tag">🇧🇮 Burundi</span>
+                        <span class="country-tag">🇿🇦 South Africa</span>
+                        <span class="country-tag">🇳🇬 Nigeria</span>
+                        <span class="country-tag">🇬🇭 Ghana</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Ajab Flour Company. All rights reserved.</p>
+                <p class="project-note">This is a software engineering attachment project demonstrating web development skills.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <p class="modal-link">Don't have an account? <a href="#" id="switchToRegister">Register here</a></p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-user-plus"></i> Register</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regName">Full Name</label>
+                    <input type="text" id="regName" required placeholder="John Kamau">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email Address</label>
+                    <input type="email" id="regEmail" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label for="regCountry">Country</label>
+                    <select id="regCountry" required>
+                        <option value="">Select Country</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Phone Number</label>
+                    <div class="phone-input">
+                        <select id="regCountryCode" class="country-code">
+                            <!-- Loaded by JavaScript -->
+                        </select>
+                        <input type="tel" id="regPhone" required placeholder="712 345 678">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                <p class="modal-link">Already have an account? <a href="#" id="switchToLogin">Login here</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="alert" id="alert">
+        <div class="alert-content">
+            <span id="alertMessage"></span>
+            <button class="alert-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
