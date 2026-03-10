@@ -9,31 +9,32 @@ const API_BASE_URL = 'https://ajab-flour-hub.onrender.com'; // Update with your 
 // AUTHENTICATION CHECK
 // ============================================
 function checkAdminAuth() {
-    const user = JSON.parse(localStorage.getItem('currentUser')); // Changed from 'ajab_user'
-    const token = localStorage.getItem('token'); // Changed from 'ajab_token'
+    console.log('🔐 Checking admin authentication...');
+    
+    // Try both possible localStorage keys
+    const user = JSON.parse(localStorage.getItem('currentUser')) || 
+                 JSON.parse(localStorage.getItem('ajab_user'));
+    const token = localStorage.getItem('token') || 
+                  localStorage.getItem('ajab_token');
+    
+    console.log('User found:', user ? 'Yes' : 'No');
+    console.log('Token found:', token ? 'Yes' : 'No');
     
     if (!user || !token) {
-        // Not logged in, redirect to main site
+        console.log('❌ Not logged in, redirecting to main site');
         window.location.href = 'index.html';
-        return false;
+        return null;
     }
     
     // Check if user has admin or sales role
     if (!['admin', 'sales'].includes(user.role)) {
+        console.log('❌ User does not have admin privileges');
         alert('Access denied. Admin privileges required.');
         window.location.href = 'index.html';
-        return false;
+        return null;
     }
     
-    // Set user info in sidebar
-    document.getElementById('adminName').textContent = user.name;
-    document.getElementById('adminEmail').textContent = user.email;
-    
-    // Update role display
-    const roleElement = document.querySelector('.user-role');
-    if (roleElement) {
-        roleElement.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-    }
+    console.log(`✅ User authenticated: ${user.name} (${user.role})`);
     
     return { user, token };
 }
@@ -646,7 +647,7 @@ function createProductCard(product) {
     
     card.innerHTML = `
         <div class="product-admin-image">
-            <img src="${product.image_url || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'}" 
+            <img src="${product.image_url || 'https://www.istockphoto.com/photo/flour-background-gm465622812-59300326?utm_source=pixabay&utm_medium=affiliate&utm_campaign=sponsored_photo&utm_content=srp_topbanner_media&utm_term=flour'}" 
                  alt="${product.name}">
         </div>
         <div class="product-admin-info">
@@ -684,7 +685,7 @@ function handleProductSubmit(e) {
         price: parseFloat(document.getElementById('productPrice').value),
         stock: parseInt(document.getElementById('productStock').value),
         description: document.getElementById('productDescription').value,
-        image_url: document.getElementById('productImage').value || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+        image_url: document.getElementById('productImage').value || 'https://www.istockphoto.com/photo/flour-background-gm465622812-59300326?utm_source=pixabay&utm_medium=affiliate&utm_campaign=sponsored_photo&utm_content=srp_topbanner_media&utm_term=flour',
         featured: document.getElementById('productFeatured').checked
     };
     

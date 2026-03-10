@@ -1,362 +1,159 @@
 // ============================================
-// AJAB FLOUR BACKEND SERVER
+// AJAB FLOUR BACKEND SERVER - PORT 5300
 // ============================================
 
-// Import required packages
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
+const Database = require('./database');
 require('dotenv').config();
 
-// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5300; // Changed to 5300
+const JWT_SECRET = process.env.JWT_SECRET || 'ajab_flour_secret_key_2024';
 
-// ========== MIDDLEWARE SETUP ==========
-// TEMPORARY FIX: Allow all origins for testing
+// Initialize database
+const db = new Database();
+let isDatabaseConnected = false;
+
+// ===== MIDDLEWARE SETUP =====
 app.use(cors({
     origin: [
         'http://localhost:5500',
-        'http://127.0.0.1:5500', 
-        'http://localhost:3000',
-        'https://ajab-flour-hub.netlify.app', // My Netlify URL
-        'https://*.netlify.app'               // Allow all Netlify
+        'http://127.0.0.1:5500',
+        'http://localhost:3300',
+        'http://127.0.0.1:3300',
+        'https://ajab-flour-hub.netlify.app',
+        'https://*.netlify.app',
+        'https://ajab-flour-hub.onrender.com', // Add your Render URL
+        'https://*.onrender.com'
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept']
 }));
-app.use(express.json());
 
+// Handle preflight requests
+app.options('*', cors());
 
-// ========== DATABASE CONNECTION ==========
-console.log('🔌 Attempting to connect to database...');
-console.log('📝 Database URL:', process.env.DATABASE_URL ? 'Configured' : 'Not configured');
-
-let pool;
-let isDatabaseConnected = false;
-
-// Try to connect to PostgreSQL, fallback to in-memory if fails
-try {
-    pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: false
-    });
-
-    // Test connection
-    pool.connect((err, client, release) => {
-        if (err) {
-            console.log('⚠️  PostgreSQL connection failed:', err.message);
-            console.log('📦 Using in-memory database for demo');
-            isDatabaseConnected = false;
-        } else {
-            console.log('✅ Connected to PostgreSQL database: ajab_flour_hub');
-            isDatabaseConnected = true;
-            
-            // Test a simple query
-            client.query('SELECT NOW()', (err, result) => {
-                if (!err) {
-                    console.log('✅ Database time:', result.rows[0].now);
-                }
-                release();
-            });
-        }
-    });
-} catch (error) {
-    console.log('⚠️  Could not initialize PostgreSQL pool:', error.message);
-    console.log('📦 Using in-memory database for demo');
-    isDatabaseConnected = false;
-}
-
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'ajab_flour_secret_key_2024';
-
-// ========== AUTHENTICATION MIDDLEWARE ==========
+// Authentication middleware
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     
-    if (!token) {
-        return res.status(401).json({ 
-            success: false, 
-            error: 'Access denied. No token provided.' 
-        });
-    }
+    if (!token) return res.status(401).json({ success: false, error: 'Access denied. No token provided.' });
     
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ 
-                success: false, 
-                error: 'Invalid or expired token.' 
-            });
-        }
+        if (err) return res.status(403).json({ success: false, error: 'Invalid or expired token.' });
         req.user = user;
         next();
     });
 };
 
-
-// Check if user is admin
 const isAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ 
-            success: false, 
-            error: 'Admin access required.' 
-        });
-    }
+    if (req.user.role !== 'admin') return res.status(403).json({ success: false, error: 'Admin access required.' });
     next();
 };
 
-// Check if user is admin or sales
 const isAdminOrSales = (req, res, next) => {
-    if (!['admin', 'sales'].includes(req.user.role)) {
-        return res.status(403).json({ 
-            success: false, 
-            error: 'Admin or sales access required.' 
-        });
-    }
+    if (!['admin', 'sales'].includes(req.user.role)) return res.status(403).json({ success: false, error: 'Admin or sales access required.' });
     next();
 };
 
-
-// ========== IN-MEMORY DATABASE (FALLBACK) ==========
+// In-memory fallback
 const inMemoryDB = {
-    users: [
-        {
-            id: 1,
-            name: 'Admin User',
-            email: 'admin@ajabflour.co.ke',
-            password: '$2a$10$demo', // demo password
-            role: 'admin',
-            country_code: '+254',
-            phone: '700000000',
-            created_at: new Date()
-        }
-    ],
-    products: [
-        {
-            id: 1,
-            name: "Ajab Fortified Maize Flour",
-            description: "Premium quality maize flour for perfect ugali, fortified with essential vitamins.",
-            category: "maize_flour",
-            weight: "2kg, 5kg, 25kg",
-            price: 250,
-            stock_quantity: 1000,
-            image_url: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            is_featured: true,
-            created_at: new Date()
-        },
-        {
-            id: 2,
-            name: "Ajab Millet Flour",
-            description: "Nutritious millet flour rich in fiber and minerals, perfect for healthy chapatis.",
-            category: "millet_flour",
-            weight: "1kg, 2kg, 10kg",
-            price: 320,
-            stock_quantity: 800,
-            image_url: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            is_featured: true,
-            created_at: new Date()
-        },
-        {
-            id: 3,
-            name: "Ajab Fortified Atta",
-            description: "Whole wheat atta for soft, fluffy chapatis and mandazi.",
-            category: "atta",
-            weight: "2kg, 5kg",
-            price: 280,
-            stock_quantity: 1200,
-            image_url: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            is_featured: false,
-            created_at: new Date()
-        }
-    ],
-    inquiries: [],
-    faqs: [
-        {
-            id: 1,
-            question: "Where is your mill located?",
-            answer: "Our main mill is located in Nairobi, Kenya with distribution centers across East Africa.",
-            category: "general",
-            is_active: true
-        },
-        {
-            id: 2,
-            question: "Do you deliver internationally?",
-            answer: "Yes, we deliver across Africa. Select your country during checkout for delivery options.",
-            category: "delivery",
-            is_active: true
-        },
-        {
-            id: 3,
-            question: "What are your prices?",
-            answer: "Prices vary by product and quantity. Please check our product catalog or contact sales for bulk pricing.",
-            category: "pricing",
-            is_active: true
-        }
-    ]
+    users: [],
+    products: [],
+    orders: [],
+    carts: [],
+    cartItems: [],
+    faqs: []
 };
 
-// ========== DATABASE HELPER FUNCTIONS ==========
-async function queryDatabase(text, params = []) {
-    if (isDatabaseConnected && pool) {
-        try {
-            const result = await pool.query(text, params);
-            return { success: true, data: result.rows, rowCount: result.rowCount };
-        } catch (error) {
-            console.error('❌ Database query error:', error.message);
-            return { success: false, error: error.message };
-        }
-    } else {
-        // Fallback to in-memory database
-        return { success: false, error: 'Database not connected, using demo mode' };
-    }
-}
+// ============================================
+// API ROUTES
+// ============================================
 
-// Helper for in-memory operations
-function inMemoryQuery(table, operation, data = {}) {
-    try {
-        let result;
-        switch(operation) {
-            case 'SELECT':
-                if (data.id) {
-                    result = inMemoryDB[table].filter(item => item.id === data.id);
-                } else if (data.email) {
-                    result = inMemoryDB[table].filter(item => item.email === data.email);
-                } else {
-                    result = [...inMemoryDB[table]];
-                }
-                break;
-                
-            case 'INSERT':
-                const newId = inMemoryDB[table].length > 0 
-                    ? Math.max(...inMemoryDB[table].map(item => item.id)) + 1 
-                    : 1;
-                const newItem = { id: newId, ...data, created_at: new Date() };
-                inMemoryDB[table].push(newItem);
-                result = [newItem];
-                break;
-                
-            case 'UPDATE':
-                const index = inMemoryDB[table].findIndex(item => item.id === data.id);
-                if (index !== -1) {
-                    inMemoryDB[table][index] = { ...inMemoryDB[table][index], ...data };
-                    result = [inMemoryDB[table][index]];
-                } else {
-                    result = [];
-                }
-                break;
-                
-            case 'COUNT':
-                if (data.condition) {
-                    result = [{ count: inMemoryDB[table].filter(data.condition).length }];
-                } else {
-                    result = [{ count: inMemoryDB[table].length }];
-                }
-                break;
-        }
-        return { success: true, data: result, rowCount: result.length };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-}
-
-// ========== API ROUTES ==========
-
-// 1. ROOT ENDPOINT - SERVER STATUS
+// Health check
 app.get('/', (req, res) => {
     res.json({
+        success: true,
         message: '🚀 Ajab Flour API is running!',
-        version: '1.0.0',
+        version: '2.0.0',
         database: isDatabaseConnected ? 'Connected to PostgreSQL' : 'Using in-memory demo',
         endpoints: {
             products: 'GET /api/products',
             register: 'POST /api/register',
             login: 'POST /api/login',
-            inquiries: 'POST /api/inquiries',
-            dashboard: 'GET /api/dashboard/stats',
+            cart: 'GET/POST /api/cart',
+            checkout: 'POST /api/checkout',
+            orders: 'GET /api/orders',
             chatbot: 'POST /api/chatbot/query'
         }
     });
 });
 
-// 2. GET ALL PRODUCTS
+// Get all products
 app.get('/api/products', async (req, res) => {
     try {
-        let products;
-        
         if (isDatabaseConnected) {
-            const result = await queryDatabase('SELECT * FROM products ORDER BY id');
+            const result = await db.query('SELECT * FROM products ORDER BY id');
             if (result.success) {
-                products = result.data;
-            } else {
-                products = inMemoryDB.products;
+                return res.json({ success: true, products: result.data });
             }
-        } else {
-            products = inMemoryDB.products;
         }
-        
-        res.json({
-            success: true,
-            message: `Found ${products.length} products`,
-            products: products,
-            source: isDatabaseConnected ? 'PostgreSQL' : 'In-memory demo'
-        });
-        
+        res.json({ success: true, products: inMemoryDB.products });
     } catch (error) {
-        console.error('Products error:', error);
-        res.json({
-            success: true,
-            products: inMemoryDB.products,
-            message: 'Using demo data'
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 3. USER REGISTRATION
+// Get single product
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (isDatabaseConnected) {
+            const result = await db.query('SELECT * FROM products WHERE id = $1', [id]);
+            if (result.success && result.data.length > 0) {
+                return res.json({ success: true, product: result.data[0] });
+            }
+        }
+        
+        const product = inMemoryDB.products.find(p => p.id === parseInt(id));
+        if (product) {
+            res.json({ success: true, product });
+        } else {
+            res.status(404).json({ success: false, error: 'Product not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// User registration
 app.post('/api/register', async (req, res) => {
     try {
         const { name, email, password, country_code, phone } = req.body;
         
-        // Validate required fields
         if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Name, email, and password are required'
-            });
-        }
-        
-        // Check if user exists
-        let userExists = false;
-        
-        if (isDatabaseConnected) {
-            const checkResult = await queryDatabase(
-                'SELECT * FROM users WHERE email = $1',
-                [email]
-            );
-            userExists = checkResult.success && checkResult.data.length > 0;
-        } else {
-            userExists = inMemoryDB.users.some(user => user.email === email);
-        }
-        
-        if (userExists) {
-            return res.status(400).json({
-                success: false,
-                error: 'User with this email already exists'
-            });
+            return res.status(400).json({ success: false, error: 'Name, email, and password are required' });
         }
         
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        // Create user
-        let newUser;
-        
         if (isDatabaseConnected) {
-            const insertResult = await queryDatabase(
+            // Check if user exists
+            const checkResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+            if (checkResult.success && checkResult.data.length > 0) {
+                return res.status(400).json({ success: false, error: 'User already exists' });
+            }
+            
+            // Insert user
+            const insertResult = await db.query(
                 `INSERT INTO users (name, email, password, country_code, phone, role) 
                  VALUES ($1, $2, $3, $4, $5, 'customer') 
                  RETURNING id, name, email, country_code, phone, role, created_at`,
@@ -364,477 +161,1031 @@ app.post('/api/register', async (req, res) => {
             );
             
             if (insertResult.success && insertResult.data.length > 0) {
-                newUser = insertResult.data[0];
-            } else {
-                throw new Error('Failed to create user in database');
+                const user = insertResult.data[0];
+                const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+                
+                return res.json({
+                    success: true,
+                    message: 'Registration successful',
+                    user,
+                    token
+                });
             }
-        } else {
-            // In-memory user creation
-            const newId = inMemoryDB.users.length + 1;
-            newUser = {
-                id: newId,
-                name,
-                email,
-                password: hashedPassword,
-                country_code: country_code || '+254',
-                phone: phone || '',
-                role: 'customer',
-                created_at: new Date()
-            };
-            inMemoryDB.users.push(newUser);
         }
         
-        // Generate JWT token
-        const token = jwt.sign(
-            {
-                id: newUser.id,
-                email: newUser.email,
-                role: newUser.role
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        // In-memory fallback
+        const existingUser = inMemoryDB.users.find(u => u.email === email);
+        if (existingUser) {
+            return res.status(400).json({ success: false, error: 'User already exists' });
+        }
         
-        // Remove password from response
-        const userResponse = {
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email,
-            country_code: newUser.country_code,
-            phone: newUser.phone,
-            role: newUser.role
+        const newUser = {
+            id: inMemoryDB.users.length + 1,
+            name,
+            email,
+            password: hashedPassword,
+            country_code: country_code || '+254',
+            phone: phone || '',
+            role: 'customer',
+            created_at: new Date()
         };
+        inMemoryDB.users.push(newUser);
+        
+        const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
         
         res.json({
             success: true,
-            message: 'User registered successfully',
-            user: userResponse,
-            token: token
+            message: 'Registration successful (demo mode)',
+            user: { ...newUser, password: undefined },
+            token
         });
         
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Registration failed. Please try again.'
-        });
+        res.status(500).json({ success: false, error: 'Registration failed' });
     }
 });
 
-// 4. USER LOGIN - CORRECTED VERSION
+// User login
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         
         if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Email and password are required'
+            return res.status(400).json({ success: false, error: 'Email and password are required' });
+        }
+        
+        console.log(`Login attempt: ${email}`);
+        
+        // Try database first
+        if (isDatabaseConnected) {
+            const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+            if (result.success && result.data.length > 0) {
+                const user = result.data[0];
+                const validPassword = await bcrypt.compare(password, user.password);
+                
+                if (validPassword) {
+                    const token = jwt.sign(
+                        { id: user.id, email: user.email, role: user.role },
+                        JWT_SECRET,
+                        { expiresIn: '7d' }
+                    );
+                    
+                    return res.json({
+                        success: true,
+                        message: 'Login successful',
+                        user: { ...user, password: undefined },
+                        token
+                    });
+                }
+            }
+        }
+        
+        // Demo credentials
+        const demoCredentials = {
+            'admin@ajabflour.co.ke': { password: 'admin123', role: 'admin', name: 'Admin User' },
+            'sales@ajabflour.co.ke': { password: 'sales123', role: 'sales', name: 'Sales Manager' },
+            'customer@example.com': { password: 'customer123', role: 'customer', name: 'John Customer' }
+        };
+        
+        if (demoCredentials[email] && demoCredentials[email].password === password) {
+            const user = {
+                id: email === 'admin@ajabflour.co.ke' ? 1 : email === 'sales@ajabflour.co.ke' ? 2 : 3,
+                name: demoCredentials[email].name,
+                email: email,
+                role: demoCredentials[email].role,
+                country_code: '+254',
+                phone: '0700000000'
+            };
+            
+            const token = jwt.sign(
+                { id: user.id, email: user.email, role: user.role },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+            
+            return res.json({
+                success: true,
+                message: 'Login successful (demo mode)',
+                user,
+                token
             });
         }
         
-        console.log(`🔐 Login attempt: ${email}`);
+        res.status(400).json({ success: false, error: 'Invalid email or password' });
         
-        // Find user
-        let user;
-        let userFound = false;
-        
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ success: false, error: 'Login failed' });
+    }
+});
+
+// Get user profile
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+    try {
         if (isDatabaseConnected) {
-            const result = await queryDatabase(
-                'SELECT * FROM users WHERE email = $1',
-                [email]
+            const result = await db.query(
+                'SELECT id, name, email, country_code, phone, role, created_at FROM users WHERE id = $1',
+                [req.user.id]
             );
             
             if (result.success && result.data.length > 0) {
-                user = result.data[0];
-                userFound = true;
-                console.log(`✅ User found in database: ${user.email}, Role: ${user.role}`);
+                return res.json({ success: true, user: result.data[0] });
             }
+        }
+        
+        const user = inMemoryDB.users.find(u => u.id === req.user.id);
+        if (user) {
+            res.json({ success: true, user });
         } else {
-            // In-memory search
-            user = inMemoryDB.users.find(u => u.email === email);
-            if (user) {
-                userFound = true;
-                console.log(`✅ User found in memory: ${user.email}`);
-            }
+            res.status(404).json({ success: false, error: 'User not found' });
         }
-        
-        if (!userFound) {
-            console.log(`❌ User not found: ${email}`);
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid email or password'
-            });
-        }
-        
-        // DEBUG: Log password info
-        console.log(`🔑 Input password: ${password}`);
-        console.log(`🔑 Stored password: ${user.password ? 'Present' : 'Missing'}`);
-        console.log(`🔑 Password length: ${user.password ? user.password.length : 0}`);
-        
-        // Check password - SIMPLIFIED VERSION
-        let validPassword = false;
-        
-        if (user.password) {
-            // Try bcrypt compare first
-            try {
-                validPassword = await bcrypt.compare(password, user.password);
-                console.log(`🔐 Bcrypt compare result: ${validPassword}`);
-            } catch (bcryptError) {
-                console.log(`⚠️ Bcrypt error: ${bcryptError.message}`);
-                
-                // If bcrypt fails, try plain text comparison (for testing)
-                if (user.password === password) {
-                    validPassword = true;
-                    console.log(`✅ Plain text password match for testing`);
-                }
-            }
-        }
-        
-        // DEMO MODE: Accept hardcoded credentials if database not working
-        if (!validPassword) {
-            // Demo credentials for testing
-            const demoCredentials = {
-                'admin@ajabflour.co.ke': { password: 'admin123', role: 'admin' },
-                'sales@ajabflour.co.ke': { password: 'sales123', role: 'sales' },
-                'customer@example.com': { password: 'customer123', role: 'customer' }
-            };
-            
-            if (demoCredentials[email] && demoCredentials[email].password === password) {
-                validPassword = true;
-                console.log(`✅ Demo credentials accepted for: ${email}`);
-                
-                // Update user object with demo data
-                if (!user) {
-                    user = {
-                        id: email === 'admin@ajabflour.co.ke' ? 1 : 
-                             email === 'sales@ajabflour.co.ke' ? 2 : 3,
-                        name: email === 'admin@ajabflour.co.ke' ? 'Ajab Admin' :
-                              email === 'sales@ajabflour.co.ke' ? 'Sales Manager' : 'Demo Customer',
-                        email: email,
-                        role: demoCredentials[email].role,
-                        country_code: '+254',
-                        phone: '0700000000'
-                    };
-                }
-            }
-        }
-        
-        if (!validPassword) {
-            console.log(`❌ Invalid password for: ${email}`);
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid email or password'
-            });
-        }
-        
-        console.log(`✅ Login successful: ${email}, Role: ${user.role}`);
-        
-        // Generate JWT token
-        const token = jwt.sign(
-            {
-                id: user.id,
-                email: user.email,
-                role: user.role
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-        
-        // Remove password from response
-        const userResponse = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            country_code: user.country_code,
-            phone: user.phone,
-            role: user.role
-        };
-        
-        res.json({
-            success: true,
-            message: 'Login successful',
-            user: userResponse,
-            token: token
-        });
-        
     } catch (error) {
-        console.error('❌ Login error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Login failed. Please try again.'
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 5. CREATE ORDER INQUIRY
-app.post('/api/inquiries', async (req, res) => {
+// Get or create cart
+app.get('/api/cart', authenticateToken, async (req, res) => {
     try {
-        const { name, email, phone, product_id, quantity, delivery_address, country, notes } = req.body;
+        const userId = req.user.id;
         
-        // Validate required fields
-        if (!name || !email || !product_id || !quantity || !delivery_address || !country) {
-            return res.status(400).json({
-                success: false,
-                error: 'Please fill all required fields'
+        if (isDatabaseConnected) {
+            // Find or create cart
+            let cartResult = await db.query('SELECT * FROM carts WHERE user_id = $1', [userId]);
+            
+            if (!cartResult.success || cartResult.data.length === 0) {
+                cartResult = await db.query(
+                    'INSERT INTO carts (user_id) VALUES ($1) RETURNING *',
+                    [userId]
+                );
+            }
+            
+            const cart = cartResult.data[0];
+            
+            // Get cart items with product details
+            const itemsResult = await db.query(`
+                SELECT ci.*, p.name, p.image_url, p.weight 
+                FROM cart_items ci
+                JOIN products p ON ci.product_id = p.id
+                WHERE ci.cart_id = $1
+            `, [cart.id]);
+            
+            return res.json({
+                success: true,
+                cart: {
+                    id: cart.id,
+                    items: itemsResult.data || [],
+                    total: itemsResult.data.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                }
             });
         }
         
-        // Find or create user
-        let userId;
+        // In-memory fallback
+        let cart = inMemoryDB.carts.find(c => c.user_id === userId);
+        if (!cart) {
+            cart = { id: inMemoryDB.carts.length + 1, user_id: userId, items: [] };
+            inMemoryDB.carts.push(cart);
+        }
+        
+        res.json({
+            success: true,
+            cart: {
+                id: cart.id,
+                items: cart.items || [],
+                total: (cart.items || []).reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            }
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Add item to cart
+app.post('/api/cart/add', authenticateToken, async (req, res) => {
+    try {
+        const { product_id, quantity } = req.body;
+        const userId = req.user.id;
+        
+        if (!product_id || !quantity) {
+            return res.status(400).json({ success: false, error: 'Product ID and quantity required' });
+        }
         
         if (isDatabaseConnected) {
-            // Check if user exists
-            const userResult = await queryDatabase(
-                'SELECT id FROM users WHERE email = $1',
-                [email]
+            // Get product price
+            const productResult = await db.query('SELECT price FROM products WHERE id = $1', [product_id]);
+            if (!productResult.success || productResult.data.length === 0) {
+                return res.status(404).json({ success: false, error: 'Product not found' });
+            }
+            
+            const price = productResult.data[0].price;
+            
+            // Get or create cart
+            let cartResult = await db.query('SELECT id FROM carts WHERE user_id = $1', [userId]);
+            let cartId;
+            
+            if (cartResult.success && cartResult.data.length > 0) {
+                cartId = cartResult.data[0].id;
+            } else {
+                const newCart = await db.query('INSERT INTO carts (user_id) VALUES ($1) RETURNING id', [userId]);
+                cartId = newCart.data[0].id;
+            }
+            
+            // Check if item already in cart
+            const existingItem = await db.query(
+                'SELECT id, quantity FROM cart_items WHERE cart_id = $1 AND product_id = $2',
+                [cartId, product_id]
             );
             
-            if (userResult.success && userResult.data.length > 0) {
-                userId = userResult.data[0].id;
-            } else {
-                // Create new user
-                const newUserResult = await queryDatabase(
-                    `INSERT INTO users (name, email, phone, role) 
-                     VALUES ($1, $2, $3, 'customer') 
-                     RETURNING id`,
-                    [name, email, phone || '']
+            if (existingItem.success && existingItem.data.length > 0) {
+                // Update quantity
+                await db.query(
+                    'UPDATE cart_items SET quantity = quantity + $1 WHERE id = $2',
+                    [quantity, existingItem.data[0].id]
                 );
-                
-                if (newUserResult.success && newUserResult.data.length > 0) {
-                    userId = newUserResult.data[0].id;
-                } else {
-                    throw new Error('Failed to create user');
-                }
-            }
-            
-            // Create inquiry in database
-            const inquiryResult = await queryDatabase(
-                `INSERT INTO inquiries (user_id, product_id, quantity, delivery_address, country, notes) 
-                 VALUES ($1, $2, $3, $4, $5, $6) 
-                 RETURNING *`,
-                [userId, product_id, quantity, delivery_address, country, notes || '']
-            );
-            
-            if (inquiryResult.success) {
-                res.json({
-                    success: true,
-                    message: 'Order inquiry submitted successfully! Our team will contact you within 24 hours.',
-                    inquiry: inquiryResult.data[0],
-                    order_id: `ORD${Date.now().toString().slice(-6)}`
-                });
             } else {
-                throw new Error('Failed to create inquiry');
+                // Insert new item
+                await db.query(
+                    'INSERT INTO cart_items (cart_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
+                    [cartId, product_id, quantity, price]
+                );
             }
             
+            return res.json({ success: true, message: 'Item added to cart' });
+        }
+        
+        // In-memory fallback
+        let cart = inMemoryDB.carts.find(c => c.user_id === userId);
+        if (!cart) {
+            cart = { id: inMemoryDB.carts.length + 1, user_id: userId, items: [] };
+            inMemoryDB.carts.push(cart);
+        }
+        
+        const product = inMemoryDB.products.find(p => p.id === product_id);
+        if (!product) {
+            return res.status(404).json({ success: false, error: 'Product not found' });
+        }
+        
+        const existingItem = cart.items.find(i => i.product_id === product_id);
+        if (existingItem) {
+            existingItem.quantity += quantity;
         } else {
-            // In-memory order creation
-            const inquiryId = inMemoryDB.inquiries.length + 1;
-            const newInquiry = {
-                id: inquiryId,
-                user_id: 1, // Default user
+            cart.items.push({
                 product_id,
                 quantity,
-                delivery_address,
-                country,
-                notes: notes || '',
-                status: 'pending',
-                created_at: new Date()
-            };
+                price: product.price,
+                name: product.name
+            });
+        }
+        
+        res.json({ success: true, message: 'Item added to cart (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update cart item
+app.put('/api/cart/update', authenticateToken, async (req, res) => {
+    try {
+        const { item_id, quantity } = req.body;
+        const userId = req.user.id;
+        
+        if (!item_id || quantity === undefined) {
+            return res.status(400).json({ success: false, error: 'Item ID and quantity required' });
+        }
+        
+        if (isDatabaseConnected) {
+            if (quantity <= 0) {
+                await db.query('DELETE FROM cart_items WHERE id = $1', [item_id]);
+            } else {
+                await db.query('UPDATE cart_items SET quantity = $1 WHERE id = $2', [quantity, item_id]);
+            }
             
-            inMemoryDB.inquiries.push(newInquiry);
+            return res.json({ success: true, message: 'Cart updated' });
+        }
+        
+        // In-memory fallback
+        const cart = inMemoryDB.carts.find(c => c.user_id === userId);
+        if (cart) {
+            const itemIndex = cart.items.findIndex(i => i.product_id === item_id);
+            if (itemIndex !== -1) {
+                if (quantity <= 0) {
+                    cart.items.splice(itemIndex, 1);
+                } else {
+                    cart.items[itemIndex].quantity = quantity;
+                }
+            }
+        }
+        
+        res.json({ success: true, message: 'Cart updated (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Remove from cart
+app.delete('/api/cart/remove/:item_id', authenticateToken, async (req, res) => {
+    try {
+        const { item_id } = req.params;
+        const userId = req.user.id;
+        
+        if (isDatabaseConnected) {
+            await db.query('DELETE FROM cart_items WHERE id = $1', [item_id]);
+            return res.json({ success: true, message: 'Item removed from cart' });
+        }
+        
+        // In-memory fallback
+        const cart = inMemoryDB.carts.find(c => c.user_id === userId);
+        if (cart) {
+            cart.items = cart.items.filter(i => i.product_id !== parseInt(item_id));
+        }
+        
+        res.json({ success: true, message: 'Item removed from cart (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Clear cart
+app.delete('/api/cart/clear', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        if (isDatabaseConnected) {
+            const cartResult = await db.query('SELECT id FROM carts WHERE user_id = $1', [userId]);
+            if (cartResult.success && cartResult.data.length > 0) {
+                await db.query('DELETE FROM cart_items WHERE cart_id = $1', [cartResult.data[0].id]);
+            }
+            return res.json({ success: true, message: 'Cart cleared' });
+        }
+        
+        // In-memory fallback
+        const cart = inMemoryDB.carts.find(c => c.user_id === userId);
+        if (cart) {
+            cart.items = [];
+        }
+        
+        res.json({ success: true, message: 'Cart cleared (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Checkout - create order
+app.post('/api/checkout', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const {
+            customer_name, customer_email, customer_phone, customer_country,
+            delivery_address, delivery_city, delivery_postal_code, delivery_notes,
+            payment_method, items, subtotal, tax_amount, shipping_amount, total_amount
+        } = req.body;
+        
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, error: 'No items in cart' });
+        }
+        
+        if (!customer_name || !customer_email || !delivery_address) {
+            return res.status(400).json({ success: false, error: 'Customer information required' });
+        }
+        
+        // Generate order number
+        const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+        
+        if (isDatabaseConnected) {
+            const client = await db.pool.connect();
+            
+            try {
+                await client.query('BEGIN');
+                
+                // Create order
+                const orderResult = await client.query(
+                    `INSERT INTO orders (
+                        order_number, user_id, customer_name, customer_email, customer_phone,
+                        customer_country, delivery_address, delivery_city, delivery_postal_code,
+                        delivery_notes, payment_method, subtotal, tax_amount, shipping_amount,
+                        total_amount, status, payment_status
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pending', 'pending')
+                    RETURNING *`,
+                    [
+                        orderNumber, userId, customer_name, customer_email, customer_phone,
+                        customer_country, delivery_address, delivery_city, delivery_postal_code,
+                        delivery_notes || '', payment_method || 'mpesa', subtotal || 0,
+                        tax_amount || 0, shipping_amount || 0, total_amount || 0
+                    ]
+                );
+                
+                const order = orderResult.rows[0];
+                
+                // Create order items and update stock
+                for (const item of items) {
+                    // Get current stock
+                    const stockResult = await client.query(
+                        'SELECT stock_quantity FROM products WHERE id = $1',
+                        [item.id]
+                    );
+                    
+                    const currentStock = stockResult.rows[0]?.stock_quantity || 0;
+                    
+                    // Insert order item
+                    await client.query(
+                        `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, total_price)
+                         VALUES ($1, $2, $3, $4, $5, $6)`,
+                        [order.id, item.id, item.name, item.price, item.quantity, item.price * item.quantity]
+                    );
+                    
+                    // Update stock
+                    await client.query(
+                        'UPDATE products SET stock_quantity = $1 WHERE id = $2',
+                        [currentStock - item.quantity, item.id]
+                    );
+                }
+                
+                // Clear cart
+                const cartResult = await client.query('SELECT id FROM carts WHERE user_id = $1', [userId]);
+                if (cartResult.rows.length > 0) {
+                    await client.query('DELETE FROM cart_items WHERE cart_id = $1', [cartResult.rows[0].id]);
+                }
+                
+                // Create payment record
+                await client.query(
+                    `INSERT INTO payments (order_id, payment_method, amount, status, phone_number)
+                     VALUES ($1, $2, $3, 'pending', $4)`,
+                    [order.id, payment_method || 'mpesa', total_amount, customer_phone]
+                );
+                
+                // Create shipment record
+                await client.query(
+                    `INSERT INTO shipments (order_id, carrier, status, estimated_delivery)
+                     VALUES ($1, 'Ajab Logistics', 'pending', CURRENT_DATE + INTERVAL '7 days')`,
+                    [order.id]
+                );
+                
+                await client.query('COMMIT');
+                
+                res.json({
+                    success: true,
+                    message: 'Order created successfully',
+                    order: {
+                        id: order.id,
+                        order_number: order.order_number,
+                        total_amount: order.total_amount,
+                        created_at: order.created_at
+                    }
+                });
+                
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
+        } else {
+            // In-memory order creation
+            const order = {
+                id: Date.now(),
+                order_number: orderNumber,
+                user_id: userId,
+                customer_name,
+                customer_email,
+                total_amount,
+                created_at: new Date(),
+                status: 'pending'
+            };
+            inMemoryDB.orders.push(order);
             
             res.json({
                 success: true,
-                message: 'Order inquiry submitted successfully! Our team will contact you within 24 hours.',
-                inquiry: newInquiry,
-                order_id: `ORD${Date.now().toString().slice(-6)}`
+                message: 'Order created successfully (demo mode)',
+                order
             });
         }
         
     } catch (error) {
-        console.error('Order error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to submit order. Please try again.'
-        });
+        console.error('Checkout error:', error);
+        res.status(500).json({ success: false, error: 'Failed to create order: ' + error.message });
     }
 });
 
-// 6. GET DASHBOARD STATISTICS (Protected)
-app.get('/api/dashboard/stats', authenticateToken, isAdminOrSales, async (req, res) => {
-    console.log(`📊 Dashboard accessed by: ${req.user.email} (${req.user.role})`);
+// Get user orders
+app.get('/api/orders', authenticateToken, async (req, res) => {
     try {
-        let stats;
+        const userId = req.user.id;
         
         if (isDatabaseConnected) {
-            // Get real stats from database
-            const pendingResult = await queryDatabase(
-                "SELECT COUNT(*) FROM inquiries WHERE status = 'pending'"
+            const ordersResult = await db.query(
+                `SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC`,
+                [userId]
             );
-            const processingResult = await queryDatabase(
-                "SELECT COUNT(*) FROM inquiries WHERE status = 'processing'"
-            );
-            const lowStockResult = await queryDatabase(
-                "SELECT COUNT(*) FROM products WHERE stock_quantity < 100"
-            );
-            const recentResult = await queryDatabase(
-                "SELECT COUNT(*) FROM inquiries WHERE created_at >= NOW() - INTERVAL '7 days'"
-            );
-            const revenueResult = await queryDatabase(`
-                SELECT COALESCE(SUM(p.price * i.quantity), 0) as revenue
-                FROM inquiries i
-                JOIN products p ON i.product_id = p.id
-                WHERE i.status IN ('confirmed', 'delivered')
-                AND i.created_at >= NOW() - INTERVAL '30 days'
-            `);
             
-            stats = {
-                pending_orders: pendingResult.success ? parseInt(pendingResult.data[0].count) : 0,
-                processing_orders: processingResult.success ? parseInt(processingResult.data[0].count) : 0,
-                low_stock_items: lowStockResult.success ? parseInt(lowStockResult.data[0].count) : 0,
-                recent_inquiries: recentResult.success ? parseInt(recentResult.data[0].count) : 0,
-                monthly_revenue: revenueResult.success ? parseInt(revenueResult.data[0].revenue) : 245800
-            };
-        } else {
-            // Demo stats
-            stats = {
-                pending_orders: inMemoryDB.inquiries.filter(i => i.status === 'pending').length,
-                processing_orders: 5,
-                low_stock_items: inMemoryDB.products.filter(p => p.stock_quantity < 100).length,
-                recent_inquiries: inMemoryDB.inquiries.length,
-                monthly_revenue: 245800
-            };
+            return res.json({ success: true, orders: ordersResult.data || [] });
         }
         
-        res.json({
-            success: true,
-            message: 'Dashboard statistics',
-            stats: stats,
-            source: isDatabaseConnected ? 'PostgreSQL' : 'Demo data'
-        });
+        const orders = inMemoryDB.orders.filter(o => o.user_id === userId);
+        res.json({ success: true, orders });
         
     } catch (error) {
-        console.error('Stats error:', error);
-        res.json({
-            success: true,
-            stats: {
-                pending_orders: 12,
-                processing_orders: 8,
-                low_stock_items: 3,
-                recent_inquiries: 24,
-                monthly_revenue: 245800
-            },
-            message: 'Using demo statistics'
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-    // 7. GET ALL INQUIRIES (Protected)
-app.get('/api/inquiries', authenticateToken, isAdminOrSales, async (req, res) => {
-    console.log(`📋 Inquiries accessed by: ${req.user.email}`);
+// Get order details
+app.get('/api/orders/:id', authenticateToken, async (req, res) => {
     try {
-        console.log(`📋 Inquiries accessed by: ${req.user.email}`);
-        let inquiries;
+        const { id } = req.params;
+        const userId = req.user.id;
         
         if (isDatabaseConnected) {
-            const result = await queryDatabase(`
-                SELECT i.*, u.name as customer_name, u.email, u.phone, 
-                       p.name as product_name, p.price, p.weight
-                FROM inquiries i
-                LEFT JOIN users u ON i.user_id = u.id
-                LEFT JOIN products p ON i.product_id = p.id
-                ORDER BY i.created_at DESC
-                LIMIT 50
-            `);
+            const orderResult = await db.query(
+                'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
+                [id, userId]
+            );
             
-            inquiries = result.success ? result.data : [];
-        } else {
-            inquiries = inMemoryDB.inquiries.map(inquiry => ({
-                ...inquiry,
-                customer_name: 'Demo Customer',
-                email: 'customer@example.com',
-                phone: '+254700000000',
-                product_name: 'Maize Flour',
-                price: 250,
-                weight: '2kg'
-            }));
+            if (!orderResult.success || orderResult.data.length === 0) {
+                return res.status(404).json({ success: false, error: 'Order not found' });
+            }
+            
+            const itemsResult = await db.query(
+                'SELECT * FROM order_items WHERE order_id = $1',
+                [id]
+            );
+            
+            return res.json({
+                success: true,
+                order: orderResult.data[0],
+                items: itemsResult.data || []
+            });
         }
         
-        res.json({
-            success: true,
-            inquiries: inquiries,
-            count: inquiries.length
-        });
+        const order = inMemoryDB.orders.find(o => o.id === parseInt(id) && o.user_id === userId);
+        if (order) {
+            res.json({ success: true, order, items: [] });
+        } else {
+            res.status(404).json({ success: false, error: 'Order not found' });
+        }
         
     } catch (error) {
-        console.error('Inquiries error:', error);
-        res.json({
-            success: true,
-            inquiries: [],
-            message: 'No inquiries found'
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 8. UPDATE INQUIRY STATUS (Protected)
-app.put('/api/inquiries/:id/status', authenticateToken, isAdminOrSales, async (req, res) => {
-    console.log(`✏️ Status update by: ${req.user.email}`);
+// ============================================
+// ADMIN ROUTES
+// ============================================
+
+// Get all orders (admin)
+app.get('/api/admin/orders', authenticateToken, isAdminOrSales, async (req, res) => {
     try {
-        console.log(`✏️ Status update by: ${req.user.email}`);
+        if (isDatabaseConnected) {
+            const result = await db.query(`
+                SELECT o.*, u.name as user_name 
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                ORDER BY o.created_at DESC
+                LIMIT 100
+            `);
+            
+            return res.json({ success: true, orders: result.data || [] });
+        }
+        
+        res.json({ success: true, orders: inMemoryDB.orders });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update order status (admin)
+app.put('/api/admin/orders/:id/status', authenticateToken, isAdminOrSales, async (req, res) => {
+    try {
         const { id } = req.params;
         const { status } = req.body;
         
-        if (!status || !['pending', 'processing', 'confirmed', 'delivered', 'cancelled'].includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid status value'
-            });
+        if (!status || !['pending', 'processing', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+            return res.status(400).json({ success: false, error: 'Invalid status' });
         }
         
         if (isDatabaseConnected) {
-            const result = await queryDatabase(
-                'UPDATE inquiries SET status = $1 WHERE id = $2 RETURNING *',
-                [status, id]
+            await db.query('UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [status, id]);
+            return res.json({ success: true, message: 'Order status updated' });
+        }
+        
+        res.json({ success: true, message: 'Order status updated (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update payment status (admin)
+app.put('/api/admin/orders/:id/payment', authenticateToken, isAdminOrSales, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { payment_status, payment_reference } = req.body;
+        
+        if (!payment_status || !['pending', 'paid', 'failed', 'refunded'].includes(payment_status)) {
+            return res.status(400).json({ success: false, error: 'Invalid payment status' });
+        }
+        
+        if (isDatabaseConnected) {
+            await db.query(
+                'UPDATE orders SET payment_status = $1, payment_reference = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+                [payment_status, payment_reference || null, id]
+            );
+            return res.json({ success: true, message: 'Payment status updated' });
+        }
+        
+        res.json({ success: true, message: 'Payment status updated (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get dashboard stats (admin)
+app.get('/api/admin/dashboard/stats', authenticateToken, isAdminOrSales, async (req, res) => {
+    try {
+        let stats = {
+            total_orders: 0,
+            pending_orders: 0,
+            processing_orders: 0,
+            completed_orders: 0,
+            total_revenue: 0,
+            total_customers: 0,
+            total_products: 0,
+            low_stock_items: 0
+        };
+        
+        if (isDatabaseConnected) {
+            // Total orders
+            const totalOrders = await db.query('SELECT COUNT(*) FROM orders');
+            if (totalOrders.success) stats.total_orders = parseInt(totalOrders.data[0].count);
+            
+            // Pending orders
+            const pendingOrders = await db.query("SELECT COUNT(*) FROM orders WHERE status = 'pending'");
+            if (pendingOrders.success) stats.pending_orders = parseInt(pendingOrders.data[0].count);
+            
+            // Processing orders
+            const processingOrders = await db.query("SELECT COUNT(*) FROM orders WHERE status = 'processing'");
+            if (processingOrders.success) stats.processing_orders = parseInt(processingOrders.data[0].count);
+            
+            // Completed orders
+            const completedOrders = await db.query("SELECT COUNT(*) FROM orders WHERE status = 'delivered'");
+            if (completedOrders.success) stats.completed_orders = parseInt(completedOrders.data[0].count);
+            
+            // Total revenue
+            const revenue = await db.query("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE payment_status = 'paid'");
+            if (revenue.success) stats.total_revenue = parseFloat(revenue.data[0].coalesce);
+            
+            // Total customers
+            const customers = await db.query("SELECT COUNT(*) FROM users WHERE role = 'customer'");
+            if (customers.success) stats.total_customers = parseInt(customers.data[0].count);
+            
+            // Total products
+            const products = await db.query('SELECT COUNT(*) FROM products');
+            if (products.success) stats.total_products = parseInt(products.data[0].count);
+            
+            // Low stock items
+            const lowStock = await db.query('SELECT COUNT(*) FROM products WHERE stock_quantity < 100');
+            if (lowStock.success) stats.low_stock_items = parseInt(lowStock.data[0].count);
+            
+            return res.json({ success: true, stats });
+        }
+        
+        // Demo stats
+        stats = {
+            total_orders: 156,
+            pending_orders: 23,
+            processing_orders: 45,
+            completed_orders: 78,
+            total_revenue: 245800,
+            total_customers: 1245,
+            total_products: 48,
+            low_stock_items: 3
+        };
+        
+        res.json({ success: true, stats });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get all users (admin)
+app.get('/api/admin/users', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        if (isDatabaseConnected) {
+            const result = await db.query(
+                'SELECT id, name, email, country_code, phone, role, created_at FROM users ORDER BY id'
+            );
+            return res.json({ success: true, users: result.data || [] });
+        }
+        
+        res.json({ success: true, users: inMemoryDB.users });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Add product (admin)
+app.post('/api/admin/products', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { name, description, category, weight, price, stock_quantity, image_url, is_featured } = req.body;
+        
+        if (!name || !category || !price) {
+            return res.status(400).json({ success: false, error: 'Name, category, and price are required' });
+        }
+        
+        if (isDatabaseConnected) {
+            const result = await db.query(
+                `INSERT INTO products (name, description, category, weight, price, stock_quantity, image_url, is_featured)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                [name, description || '', category, weight || '', price, stock_quantity || 0, image_url || '', is_featured || false]
             );
             
-            if (result.success) {
-                res.json({
-                    success: true,
-                    message: 'Order status updated successfully',
-                    inquiry: result.data[0]
-                });
-            } else {
-                throw new Error('Failed to update status');
+            return res.json({ success: true, product: result.data[0] });
+        }
+        
+        const newProduct = {
+            id: inMemoryDB.products.length + 1,
+            name,
+            description,
+            category,
+            weight,
+            price,
+            stock_quantity,
+            image_url,
+            is_featured
+        };
+        inMemoryDB.products.push(newProduct);
+        
+        res.json({ success: true, product: newProduct });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Update product (admin)
+app.put('/api/admin/products/:id', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        
+        if (isDatabaseConnected) {
+            const result = await db.query(
+                `UPDATE products 
+                 SET name = COALESCE($1, name),
+                     description = COALESCE($2, description),
+                     category = COALESCE($3, category),
+                     weight = COALESCE($4, weight),
+                     price = COALESCE($5, price),
+                     stock_quantity = COALESCE($6, stock_quantity),
+                     image_url = COALESCE($7, image_url),
+                     is_featured = COALESCE($8, is_featured)
+                 WHERE id = $9 RETURNING *`,
+                [updates.name, updates.description, updates.category, updates.weight, updates.price, updates.stock_quantity, updates.image_url, updates.is_featured, id]
+            );
+            
+            if (result.success && result.data.length > 0) {
+                return res.json({ success: true, product: result.data[0] });
             }
+            return res.status(404).json({ success: false, error: 'Product not found' });
+        }
+        
+        res.json({ success: true, message: 'Product updated (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Delete product (admin)
+app.delete('/api/admin/products/:id', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (isDatabaseConnected) {
+            await db.query('DELETE FROM products WHERE id = $1', [id]);
+            return res.json({ success: true, message: 'Product deleted' });
+        }
+        
+        res.json({ success: true, message: 'Product deleted (demo mode)' });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
+// CHATBOT / AI ASSISTANT
+// ============================================
+
+// Get FAQs
+app.get('/api/faqs', async (req, res) => {
+    try {
+        if (isDatabaseConnected) {
+            const result = await db.query('SELECT * FROM faqs WHERE is_active = true ORDER BY id');
+            return res.json({ success: true, faqs: result.data || [] });
+        }
+        
+        res.json({
+            success: true,
+            faqs: [
+                { id: 1, question: 'Where is your mill located?', answer: 'Our main mill is located in Nairobi, Kenya with distribution centers across East Africa.', category: 'general' },
+                { id: 2, question: 'Do you deliver internationally?', answer: 'Yes, we deliver across Africa. Select your country during checkout for delivery options.', category: 'delivery' },
+                { id: 3, question: 'What are your prices?', answer: 'Prices vary by product and quantity. Please check our product catalog or contact sales for bulk pricing.', category: 'pricing' },
+                { id: 4, question: 'What is the shelf life of your flour?', answer: 'Our fortified flours have a shelf life of 6-8 months when stored in cool, dry conditions.', category: 'products' }
+            ]
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// AI Chatbot query
+app.post('/api/chatbot/query', async (req, res) => {
+    try {
+        const { question, session_id } = req.body;
+        
+        if (!question) {
+            return res.json({
+                success: true,
+                response: "Hello! I'm Ajab Assistant. How can I help you today?",
+                suggestions: [
+                    "What products do you sell?",
+                    "Do you deliver to my country?",
+                    "What are your prices?",
+                    "Where is your location?"
+                ]
+            });
+        }
+        
+        // Get FAQs from database
+        let faqs = [];
+        if (isDatabaseConnected) {
+            const result = await db.query('SELECT question, answer FROM faqs WHERE is_active = true');
+            if (result.success) faqs = result.data;
         } else {
-            // Update in-memory
-            const inquiry = inMemoryDB.inquiries.find(i => i.id === parseInt(id));
-            if (inquiry) {
-                inquiry.status = status;
-                res.json({
+            faqs = [
+                { question: 'Where is your mill located?', answer: 'Our main mill is located in Nairobi, Kenya with distribution centers across East Africa.' },
+                { question: 'Do you deliver internationally?', answer: 'Yes, we deliver across Africa. Select your country during checkout for delivery options.' },
+                { question: 'What are your prices?', answer: 'Prices vary by product and quantity. Please check our product catalog or contact sales for bulk pricing.' },
+                { question: 'What is the shelf life of your flour?', answer: 'Our fortified flours have a shelf life of 6-8 months when stored in cool, dry conditions.' }
+            ];
+        }
+        
+        // Simple NLP matching
+        const questionLower = question.toLowerCase();
+        
+        // Check for matches in FAQs
+        for (const faq of faqs) {
+            const faqWords = faq.question.toLowerCase().split(' ');
+            const matchCount = faqWords.filter(word => 
+                questionLower.includes(word) && word.length > 3
+            ).length;
+            
+            if (matchCount >= 2 || questionLower.includes(faq.question.toLowerCase().substring(0, 15))) {
+                return res.json({
                     success: true,
-                    message: 'Order status updated successfully',
-                    inquiry: inquiry
-                });
-            } else {
-                res.status(404).json({
-                    success: false,
-                    error: 'Order not found'
+                    response: faq.answer,
+                    suggestions: getSuggestions(faq.category)
                 });
             }
         }
         
+        // Keyword-based responses
+        if (questionLower.includes('price') || questionLower.includes('cost')) {
+            return res.json({
+                success: true,
+                response: 'Our flour prices range from KSh 250 to KSh 320 per kg depending on the product. For bulk orders, we offer special discounts. Would you like me to connect you with our sales team?',
+                suggestions: ['Maize flour price', 'Bulk discount', 'Minimum order']
+            });
+        }
+        
+        if (questionLower.includes('delivery') || questionLower.includes('shipping')) {
+            return res.json({
+                success: true,
+                response: 'We deliver across Africa within 3-7 business days. Delivery costs vary by location. For orders over 500kg, delivery is free within East Africa.',
+                suggestions: ['Delivery to Tanzania', 'Shipping cost', 'Delivery time']
+            });
+        }
+        
+        if (questionLower.includes('product') || questionLower.includes('flour')) {
+            return res.json({
+                success: true,
+                response: 'We offer Maize Flour, Millet Flour, Atta, Self Raising Flour, Baking Flour, and Whole Wheat Flour. All our products are fortified with essential vitamins.',
+                suggestions: ['Maize flour details', 'Millet flour benefits', 'Whole wheat flour']
+            });
+        }
+        
+        if (questionLower.includes('order') || questionLower.includes('buy')) {
+            return res.json({
+                success: true,
+                response: 'You can place orders directly on our website using the order form, or contact our sales team at sales@ajabflour.co.ke for bulk purchases.',
+                suggestions: ['How to order', 'Bulk order', 'Payment methods']
+            });
+        }
+        
+        if (questionLower.includes('payment') || questionLower.includes('mpesa')) {
+            return res.json({
+                success: true,
+                response: 'We accept M-Pesa (for Kenya), credit/debit cards, and bank transfers. For international orders, we accept wire transfers.',
+                suggestions: ['M-Pesa payment', 'Bank details', 'Card payment']
+            });
+        }
+        
+        if (questionLower.includes('contact') || questionLower.includes('phone')) {
+            return res.json({
+                success: true,
+                response: 'You can reach us at:\n📞 Phone: +254 700 000 000\n📧 Email: info@ajabflour.co.ke\n🏢 Office: Nairobi, Kenya',
+                suggestions: ['Call me', 'Email support', 'Visit office']
+            });
+        }
+        
+        if (questionLower.includes('stock') || questionLower.includes('available')) {
+            return res.json({
+                success: true,
+                response: 'All our products are currently in stock. For specific quantities, please check our product catalog or contact sales.',
+                suggestions: ['Check stock', 'Bulk availability', 'Restock date']
+            });
+        }
+        
+        // Default response
+        res.json({
+            success: true,
+            response: "Thank you for your question. I'm not sure I understand. Would you like to speak with a customer service representative or try one of these common questions?",
+            suggestions: [
+                "What products do you sell?",
+                "How do I place an order?",
+                "Do you deliver to my country?",
+                "Contact customer care"
+            ]
+        });
+        
     } catch (error) {
-        console.error('Update status error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to update order status'
+        console.error('Chatbot error:', error);
+        res.json({
+            success: true,
+            response: "I apologize, but I'm having trouble processing your request. Please contact our customer care at +254 700 000 000.",
+            suggestions: ['Call customer care', 'Send email', 'Visit our website']
         });
     }
 });
 
-// 9. GET COUNTRIES LIST
+function getSuggestions(category) {
+    const suggestions = {
+        general: ['Where are you located?', 'Contact information', 'Working hours'],
+        delivery: ['Delivery to Tanzania', 'Shipping cost', 'Delivery time'],
+        pricing: ['Maize flour price', 'Bulk discount', 'Payment terms'],
+        products: ['Product catalog', 'Nutrition information', 'Shelf life'],
+        orders: ['How to order', 'Track my order', 'Cancel order'],
+        payments: ['M-Pesa payment', 'Bank transfer', 'Card payment']
+    };
+    
+    return suggestions[category] || ['Contact sales', 'Product catalog', 'Delivery info'];
+}
+
+// M-Pesa payment simulation
+app.post('/api/mpesa/stkpush', authenticateToken, async (req, res) => {
+    try {
+        const { phone, amount, order_id } = req.body;
+        
+        if (!phone || !amount) {
+            return res.status(400).json({ success: false, error: 'Phone and amount required' });
+        }
+        
+        // Simulate M-Pesa STK Push
+        const transaction_id = `MPESA${Date.now()}`;
+        
+        res.json({
+            success: true,
+            message: 'M-Pesa STK Push sent. Check your phone to complete payment.',
+            transaction_id,
+            merchant_request_id: `REQ${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+            checkout_request_id: `CHK${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+            response_code: '0',
+            response_description: 'Success. Request accepted for processing'
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// M-Pesa callback (for simulation)
+app.post('/api/mpesa/callback', (req, res) => {
+    console.log('M-Pesa Callback received:', req.body);
+    res.json({ ResultCode: 0, ResultDesc: 'Success' });
+});
+
+// Get countries list
 app.get('/api/countries', (req, res) => {
     const countries = [
         { code: '+254', name: 'Kenya', flag: '🇰🇪' },
@@ -846,275 +1197,98 @@ app.get('/api/countries', (req, res) => {
         { code: '+234', name: 'Nigeria', flag: '🇳🇬' },
         { code: '+233', name: 'Ghana', flag: '🇬🇭' },
         { code: '+251', name: 'Ethiopia', flag: '🇪🇹' },
-        { code: '+256', name: 'Uganda', flag: '🇺🇬' }
+        { code: '+20', name: 'Egypt', flag: '🇪🇬' },
+        { code: '+212', name: 'Morocco', flag: '🇲🇦' },
+        { code: '+254', name: 'Kenya', flag: '🇰🇪' }
     ];
     
-    res.json({
-        success: true,
-        countries: countries,
-        count: countries.length
-    });
+    res.json({ success: true, countries });
 });
 
-// 10. GET FAQS
-app.get('/api/faqs', async (req, res) => {
-    try {
-        let faqs;
-        
-        if (isDatabaseConnected) {
-            const result = await queryDatabase(
-                'SELECT * FROM faqs WHERE is_active = true ORDER BY id'
-            );
-            faqs = result.success ? result.data : [];
-        } else {
-            faqs = inMemoryDB.faqs;
-        }
-        
-        res.json({
-            success: true,
-            faqs: faqs
-        });
-        
-    } catch (error) {
-        console.error('FAQs error:', error);
-        res.json({
-            success: true,
-            faqs: inMemoryDB.faqs
-        });
-    }
-});
-
-// 11. CHATBOT QUERY
-app.post('/api/chatbot/query', async (req, res) => {
-    try {
-        const { question } = req.body;
-        
-        if (!question) {
-            return res.json({
-                success: true,
-                response: 'Hello! How can I help you today?',
-                suggestions: [
-                    'What are your product prices?',
-                    'Do you deliver to my country?',
-                    'Where is your location?'
-                ]
-            });
-        }
-        
-        let faqs;
-        
-        if (isDatabaseConnected) {
-            const result = await queryDatabase(
-                'SELECT question, answer FROM faqs WHERE is_active = true'
-            );
-            faqs = result.success ? result.data : [];
-        } else {
-            faqs = inMemoryDB.faqs;
-        }
-        
-        const questionLower = question.toLowerCase();
-        let response = 'Thank you for your question. Our customer care team will get back to you shortly.';
-        let suggestions = [];
-        
-        // Simple keyword matching
-        if (questionLower.includes('price') || questionLower.includes('cost')) {
-            response = 'Our maize flour is KSh 250 per kg, millet flour is KSh 320 per kg. Bulk orders get discounts!';
-        } else if (questionLower.includes('deliver') || questionLower.includes('ship')) {
-            response = 'We deliver across Africa within 3-7 business days. Shipping costs vary by location.';
-        } else if (questionLower.includes('location') || questionLower.includes('where')) {
-            response = 'Our main office is in Nairobi, Kenya. We have distribution centers across East Africa.';
-        } else if (questionLower.includes('contact') || questionLower.includes('phone')) {
-            response = 'You can call us at +254 700 000 000 or email info@ajabflour.co.ke';
-        }
-        
-        // Get FAQ suggestions
-        if (faqs.length > 0) {
-            suggestions = faqs.slice(0, 3).map(f => f.question);
-        }
-        
-        res.json({
-            success: true,
-            response: response,
-            suggestions: suggestions
-        });
-        
-    } catch (error) {
-        console.error('Chatbot error:', error);
-        res.json({
-            success: true,
-            response: 'I apologize, but I am having trouble processing your request. Please contact our customer care at +254 700 000 000.',
-            suggestions: ['Call customer care', 'Send email', 'Visit our website']
-        });
-    }
-});
-
-// 12. ADD NEW PRODUCT (Protected - admin only)
-app.post('/api/products/add', authenticateToken, isAdmin, async (req, res) => {
-    console.log(`➕ Product added by: ${req.user.email}`);
-    try {
-        console.log(`➕ Product added by: ${req.user.email}`);
-        const { name, description, category, weight, price, stock_quantity, image_url } = req.body;
-        
-        // Simple validation
-        if (!name || !category || !price) {
-            return res.status(400).json({
-                success: false,
-                error: 'Name, category, and price are required'
-            });
-        }
-        
-        if (isDatabaseConnected) {
-            const result = await queryDatabase(
-                `INSERT INTO products (name, description, category, weight, price, stock_quantity, image_url) 
-                 VALUES ($1, $2, $3, $4, $5, $6, $7) 
-                 RETURNING *`,
-                [name, description || '', category, weight || '', price, stock_quantity || 0, image_url || '']
-            );
-            
+// Database health check
+app.get('/api/health', async (req, res) => {
+    let dbStatus = 'disconnected';
+    let tables = {};
+    
+    if (isDatabaseConnected) {
+        try {
+            const result = await db.query('SELECT NOW() as time');
             if (result.success) {
-                res.json({
-                    success: true,
-                    message: 'Product added successfully',
-                    product: result.data[0]
-                });
-            } else {
-                throw new Error('Failed to add product');
+                dbStatus = 'connected';
+                
+                // Get table counts
+                const tablesList = ['users', 'products', 'orders', 'payments', 'faqs'];
+                for (const table of tablesList) {
+                    const count = await db.query(`SELECT COUNT(*) FROM ${table}`);
+                    if (count.success) {
+                        tables[table] = parseInt(count.data[0].count);
+                    }
+                }
             }
-        } else {
-            // Add to in-memory
-            const newId = inMemoryDB.products.length + 1;
-            const newProduct = {
-                id: newId,
-                name,
-                description: description || '',
-                category,
-                weight: weight || '',
-                price,
-                stock_quantity: stock_quantity || 0,
-                image_url: image_url || '',
-                is_featured: false,
-                created_at: new Date()
-            };
-            
-            inMemoryDB.products.push(newProduct);
-            
-            res.json({
-                success: true,
-                message: 'Product added successfully (demo mode)',
-                product: newProduct
-            });
+        } catch (error) {
+            dbStatus = 'error';
         }
-        
-    } catch (error) {
-        console.error('Add product error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to add product'
-        });
     }
-});
-
-// 13. HEALTH CHECK ENDPOINT
-app.get('/api/health', (req, res) => {
+    
     res.json({
         success: true,
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        database: isDatabaseConnected ? 'connected' : 'demo_mode',
+        database: dbStatus,
+        tables: tables,
         uptime: process.uptime(),
         memory: process.memoryUsage()
     });
 });
 
-// 14. TEST DATABASE CONNECTION
-app.get('/api/test-db', async (req, res) => {
-    try {
-        if (isDatabaseConnected) {
-            const result = await queryDatabase('SELECT NOW() as time, version() as version');
-            if (result.success) {
-                res.json({
-                    success: true,
-                    message: 'Database connected successfully',
-                    data: result.data[0],
-                    tables: await getTableCounts()
-                });
-            } else {
-                throw new Error('Query failed');
-            }
-        } else {
-            res.json({
-                success: true,
-                message: 'Using in-memory demo database',
-                data: {
-                    time: new Date(),
-                    version: 'In-memory demo v1.0'
-                }
-            });
-        }
-    } catch (error) {
-        res.json({
-            success: false,
-            message: 'Database test failed',
-            error: error.message
-        });
-    }
-});
+// ============================================
+// START SERVER
+// ============================================
 
-async function getTableCounts() {
-    if (!isDatabaseConnected) return {};
+async function startServer() {
+    // Initialize database
+    const dbInit = await db.initialize();
+    isDatabaseConnected = dbInit.connected;
     
-    const tables = ['users', 'products', 'inquiries', 'faqs'];
-    const counts = {};
-    
-    for (const table of tables) {
-        try {
-            const result = await queryDatabase(`SELECT COUNT(*) FROM ${table}`);
-            if (result.success) {
-                counts[table] = parseInt(result.data[0].count);
-            }
-        } catch (error) {
-            counts[table] = 0;
-        }
-    }
-    
-    return counts;
+    app.listen(PORT, () => {
+        console.log('\n' + '='.repeat(60));
+        console.log('🚀 AJAB FLOUR BACKEND SERVER v2.0');
+        console.log('='.repeat(60));
+        console.log(`✅ Server running on: http://localhost:${PORT}`);
+        console.log(`📊 Database: ${isDatabaseConnected ? '✅ PostgreSQL Connected' : '📦 Using In-memory Demo'}`);
+        console.log(`🔐 JWT Secret: ${JWT_SECRET ? 'Configured' : 'Using default'}`);
+        console.log('\n📡 Available Endpoints:');
+        console.log('   Public:');
+        console.log('   GET  /              - Server status');
+        console.log('   GET  /api/products  - Get all products');
+        console.log('   POST /api/register  - Register user');
+        console.log('   POST /api/login     - Login user');
+        console.log('   POST /api/chatbot   - AI Assistant');
+        console.log('\n   Protected (Auth Required):');
+        console.log('   GET  /api/cart      - Get user cart');
+        console.log('   POST /api/cart/add  - Add to cart');
+        console.log('   POST /api/checkout  - Create order');
+        console.log('   GET  /api/orders    - Get user orders');
+        console.log('\n   Admin (Admin/Sales Only):');
+        console.log('   GET  /api/admin/dashboard/stats - Dashboard stats');
+        console.log('   GET  /api/admin/orders          - All orders');
+        console.log('   POST /api/admin/products        - Add product');
+        console.log('='.repeat(60));
+        console.log('\n💡 Demo Credentials:');
+        console.log('   Admin:  admin@ajabflour.co.ke / admin123');
+        console.log('   Sales:  sales@ajabflour.co.ke / sales123');
+        console.log('   Customer: customer@example.com / customer123\n');
+    });
 }
 
-// ========== ERROR HANDLING ==========
+startServer();
 
-// 404 - Route not found
+// Error handling
 app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        error: `Route ${req.method} ${req.url} not found`
-    });
+    res.status(404).json({ success: false, error: `Route ${req.method} ${req.url} not found` });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Global error:', err);
-    res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
-});
-
-// ========== START SERVER ==========
-app.listen(PORT, () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('🚀 AJAB FLOUR BACKEND SERVER');
-    console.log('='.repeat(50));
-    console.log(`✅ Server running on: http://localhost:${PORT}`);
-    console.log(`📊 Database: ${isDatabaseConnected ? '✅ PostgreSQL Connected' : '📦 Using In-memory Demo'}`);
-    console.log(`🔐 JWT Secret: ${JWT_SECRET ? 'Configured' : 'Using default'}`);
-    console.log('\n📡 Available Endpoints:');
-    console.log('   GET  /              - Server status');
-    console.log('   GET  /api/products  - Get all products');
-    console.log('   POST /api/register  - Register user');
-    console.log('   POST /api/login     - Login user');
-    console.log('   POST /api/inquiries - Create order');
-    console.log('   GET  /api/health    - Health check');
-    console.log('='.repeat(50));
-    console.log('\n💡 Tip: Test API at http://localhost:5000/api/products\n');
+    res.status(500).json({ success: false, error: 'Internal server error' });
 });

@@ -6,8 +6,94 @@
     <title>Ajab Flour - Premium Quality Flours Across Africa</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="https://img.icons8.com/color/96/wheat.png" type="image/x-icon">
+    <style>
+    .video-header {
+        position: relative;
+        height: 100vh;
+        overflow: hidden;
+        margin-top: 0;
+    }
+    
+    .video-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+    
+    .video-container video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%);
+        z-index: 0;
+    }
+    
+    .header-content {
+        position: relative;
+        z-index: 2;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: white;
+        padding: 0 20px;
+    }
+    
+    .header-content h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 4rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        animation: glowPulse 3s infinite;
+    }
+    
+    .header-content p {
+        font-size: 1.5rem;
+        max-width: 800px;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        font-weight: 300;
+    }
+    
+    @keyframes glowPulse {
+        0%, 100% {
+            text-shadow: 0 0 5px rgba(76, 175, 80, 0.6),
+                         0 0 10px rgba(76, 175, 80, 0.6),
+                         0 0 20px rgba(76, 175, 80, 0.6);
+        }
+        50% {
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.8),
+                         0 0 20px rgba(76, 175, 80, 0.8),
+                         0 0 30px rgba(76, 175, 80, 0.8),
+                         0 0 40px rgba(76, 175, 80, 0.8);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .header-content h1 {
+            font-size: 2.5rem;
+        }
+        .header-content p {
+            font-size: 1.2rem;
+        }
+    }
+</style>
 </head>
 <body>
     <!-- Navigation -->
@@ -26,7 +112,8 @@
                 <li><button class="btn btn-login" id="loginBtn">Login</button></li>
                 <li><button class="btn btn-primary" id="registerBtn">Register</button></li>
                 <li><a href="admin.html" class="btn btn-admin"><i class="fas fa-chart-line"></i> Admin</a></li>
-                <li><a href="admin-login.html" class="btn btn-admin"><i class="fas fa-lock"></i> Admin/Sales Person</a></li>
+                <li><a href="admin-login.html" class="btn btn-admin"><i class="fas fa-lock"></i> Admin/Sales</a></li>
+                <li><button class="btn btn-cart" id="cartBtn"></button> <i class="fas fa-shopping-cart"></i><span class="cart-count" id="cartCount">0</span></button></li>
                 <li><button class="btn btn-theme-toggle" id="themeToggle"></button><i class="fas fa-moon"></i><span>Dark Mode</span> </button></li>
             </ul>
             <div class="hamburger" id="hamburger">
@@ -35,22 +122,26 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Premium Quality Flours For Every African Kitchen</h1>
-                <p>From the Kenya's finest maize to  best millet, Ajab Flour delivers nutrition, quality, and taste across Africa.</p>
-                <div class="hero-buttons">
-                    <a href="#products" class="btn btn-primary btn-large">Shop Now</a>
-                    <a href="#bulk-order" class="btn btn-secondary btn-large">Bulk Order</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <img src="https://images.unsplash.com/photo-1627485937980-221c88ac04f9?q=80&w=883&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Flour Products">
-            </div>
+    <!-- Video Header (replaces hero section) -->
+<section class="video-header" id="home">
+    <div class="video-container">
+        <video autoplay muted loop playsinline>
+            <source src="assets/videos/flour-production.mp4" type="video/mp4">
+            <!-- Fallback image if video doesn't load -->
+            <img src="https://images.unsplash.com/photo-1627485937980-221c88ac04f9?q=80&w=883&auto=format&fit=crop" alt="Flour Production">
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+    
+    <div class="header-content">
+        <h1 class="glow-text">Premium Quality Flours For Every African Kitchen</h1>
+        <p>From Kenya's finest maize to the best millet, Ajab Flour delivers nutrition, quality, and taste across Africa.</p>
+        <div class="hero-buttons">
+            <a href="#products" class="btn btn-primary btn-large">Shop Now</a>
+            <a href="#bulk-order" class="btn btn-secondary btn-large">Bulk Order</a>
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- About Section -->
 <section class="about" id="about">
@@ -131,7 +222,7 @@
             <!-- Product 1: Maize Flour -->
             <div class="product-card">
                 <div class="product-image">
-                    <img src="https://images.unsplash.com/photo-1545587195-a625d872ca82?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Fortified Maize Flour">
+                    <img src="https://www.istockphoto.com/en/photo/flour-gm535492963-57207480" alt="Ajab Fortified Maize Flour">
                     <div class="product-featured">Bestseller</div>
                 </div>
                 <div class="product-info">
@@ -149,7 +240,7 @@
             <!-- Product 2: Millet Flour -->
             <div class="product-card">
                 <div class="product-image">
-                    <img src="https://images.unsplash.com/photo-1768729339998-909158957162?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Millet Flour">
+                    <img src="https://www.istockphoto.com/en/photo/gluten-free-concept-oat-flour-gm1144977108-308029615" alt="Ajab Millet Flour">
                     <div class="product-featured">Popular</div>
                 </div>
                 <div class="product-info">
@@ -167,7 +258,7 @@
             <!-- Product 3: Lottus Flour -->
             <div class="product-card">
                 <div class="product-image">
-                    <img src="https://images.unsplash.com/photo-1586137712370-9b450509c587?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Fortified Atta">
+                    <img src="https://www.istockphoto.com/en/photo/flour-and-ears-of-wheat-on-a-black-background-close-up-bread-concept-gm1353350732-428473325" alt="Ajab Fortified Atta">
                 </div>
                 <div class="product-info">
                     <div class="product-category">Lottus Flour</div>
@@ -184,7 +275,7 @@
             <!-- Product 4: Self Raising Flour -->
             <div class="product-card">
                 <div class="product-image">
-                    <img src="https://images.unsplash.com/photo-1714842981153-ffeaf74e7a1a?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
+                    <img src="https://www.istockphoto.com/photo/flour-background-gm465622812-59300326?utm_source=pixabay&utm_medium=affiliate&utm_campaign=sponsored_photo&utm_content=srp_topbanner_media&utm_term=flour">
                 </div>
                 <div class="product-info">
                     <div class="product-category">Self Raising</div>
@@ -201,7 +292,7 @@
             <!-- Product 5: Atta Flour -->
             <div class="product-card">
                 <div class="product-image">
-                    <img src="https://images.unsplash.com/photo-1732565649629-eb4932a1ec09?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Baking Flour">
+                    <img src="https://www.istockphoto.com/photo/rice-flour-gm1400572959-454104108?utm_source=pixabay&utm_medium=affiliate&utm_campaign=sponsored_photo&utm_content=srp_topbanner_media&utm_term=flour" alt="Ajab Baking Flour">
                 </div>
                 <div class="product-info">
                     <div class="product-category">Atta Flour</div>
@@ -218,7 +309,7 @@
             <!-- Product 6: Whole Wheat Flour -->
             <div class="product-card">
                 <div class="product-image">
-                    <img src="https://images.unsplash.com/photo-1556910116-e220f7127371?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Ajab Whole Wheat Flour">
+                    <img src="https://www.istockphoto.com/photo/rice-flour-gm1400572959-454104108?utm_source=pixabay&utm_medium=affiliate&utm_campaign=sponsored_photo&utm_content=srp_topbanner_media&utm_term=flour" alt="Ajab Whole Wheat Flour">
                 </div>
                 <div class="product-info">
                     <div class="product-category">Whole Wheat</div>
@@ -571,7 +662,49 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
-    <script src="script.js"></script>
+    <!-- Cart Modal -->
+<div class="modal" id="cartModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3><i class="fas fa-shopping-cart"></i> Your Shopping Cart</h3>
+            <button class="close-modal" id="closeCart">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="cart-container">
+                <div class="cart-items" id="cartItems">
+                    <!-- Cart items will be loaded here -->
+                </div>
+                
+                <div class="cart-summary">
+                    <h4>Order Summary</h4>
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="cartSubtotal">KSh 0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax (16% VAT):</span>
+                        <span id="cartTax">KSh 0</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="cartModalTotal">KSh 0</span>
+                    </div>
+                    <button class="btn btn-primary btn-block" id="checkoutBtn">
+                        <i class="fas fa-lock"></i> Proceed to Checkout
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="cartSystem.clearCart()">
+                        <i class="fas fa-trash"></i> Clear Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/theme.js"></script>
+<script src="js/ai-assistant.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
