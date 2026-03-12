@@ -18,21 +18,27 @@ const db = new Database();
 let isDatabaseConnected = false;
 
 // ===== MIDDLEWARE SETUP =====
+// EMERGENCY CORS FIX - Allow all origins temporarily
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+// Also keep your existing cors middleware as backup
+const cors = require('cors');
 app.use(cors({
-    origin: [
-        'http://localhost:5500',
-        'http://127.0.0.1:5500',
-        'http://localhost:3300',
-        'http://127.0.0.1:3300',
-        'https://ajab-flour-hub.netlify.app', // Your Netlify URL
-        'https://*.netlify.app'               // Allow all Netlify subdomains
-    ],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
-// Handle preflight requests
-app.options('*', cors());
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
