@@ -24,16 +24,13 @@ app.use(cors({
         'http://127.0.0.1:5500',
         'http://localhost:3300',
         'http://127.0.0.1:3300',
-        'https://ajab-flour-hub.netlify.app',
-        'https://*.netlify.app',
-        'https://ajab-flour-hub.onrender.com', // Add your Render URL
-        'https://*.onrender.com'
+        'https://ajab-flour-hub.netlify.app', // Your Netlify URL
+        'https://*.netlify.app'               // Allow all Netlify subdomains
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept']
 }));
-
 // Handle preflight requests
 app.options('*', cors());
 
