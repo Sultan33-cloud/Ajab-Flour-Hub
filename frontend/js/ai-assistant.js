@@ -4,7 +4,7 @@
 
 class AjabAIAssistant {
     constructor() {
-        this.apiUrl = 'https://ajab-flour-hub.onrender.com/api/chatbot/query';
+        this.apiUrl = window.Config ? Config.getApiUrl() + '/api/chatbot/query' : 'http://localhost:5300/api/chatbot/query';
         this.soundEnabled = true;
         this.voiceEnabled = false;
         this.context = {

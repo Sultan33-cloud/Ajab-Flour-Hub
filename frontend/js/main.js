@@ -3,7 +3,7 @@
 // ============================================
 
 // API Configuration
-const API_BASE_URL = 'https://ajab-flour-hub.onrender.com'; // Updated to port 5300
+const API_BASE_URL = window.Config ? Config.getApiUrl() : 'http://localhost:5300';
 
 // DOM Elements
 const elements = {
@@ -337,20 +337,38 @@ function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card';
     
+    // SAFELY handle price - convert to number and handle errors
+    let price = 0;
+    try {
+        price = parseFloat(product.price) || 0;
+    } catch (e) {
+        console.warn('Invalid price for product:', product);
+        price = 0;
+    }
+    
+    // Safely handle other properties
+    const name = product.name || 'Product';
+    const description = product.description || 'Premium quality flour';
+    const category = product.category || 'general';
+    const weight = product.weight || 'Various sizes';
+    const imageUrl = product.image_url || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
+    const isFeatured = product.is_featured || false;
+    const id = product.id || 0;
+    
     card.innerHTML = `
-        ${product.is_featured ? '<div class="product-featured">Featured</div>' : ''}
+        ${isFeatured ? '<div class="product-featured">Featured</div>' : ''}
         <div class="product-image">
-            <img src="${product.image_url}" alt="${product.name}" onerror="this.src='https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'">
+            <img src="${imageUrl}" alt="${name}" onerror="this.src='https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'">
         </div>
         <div class="product-info">
-            <div class="product-category">${formatCategory(product.category)}</div>
-            <h3 class="product-name">${product.name}</h3>
-            <p class="product-description">${product.description}</p>
+            <div class="product-category">${formatCategory(category)}</div>
+            <h3 class="product-name">${name}</h3>
+            <p class="product-description">${description}</p>
             <div class="product-meta">
-                <div class="product-price">KSh ${product.price.toFixed(2)}</div>
-                <div class="product-weight">${product.weight}</div>
+                <div class="product-price">KSh ${price.toFixed(2)}</div>
+                <div class="product-weight">${weight}</div>
             </div>
-            <button class="btn btn-primary" onclick="orderProduct(${product.id})" style="width:100%; margin-top:10px;">
+            <button class="btn btn-primary" onclick="orderProduct(${id})" style="width:100%; margin-top:10px;">
                 <i class="fas fa-shopping-cart"></i> Order Now
             </button>
         </div>

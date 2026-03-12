@@ -228,12 +228,11 @@
             </div>
         </div>
     </div>
-    <script>const API_BASE_URL = 'https://ajab-flour-hub.onrender.com';</script>
-    <script src="js/theme.js"></script>
-    <script src="js/ai-assistant.js"></script>
-    <script src="js/cart.js"></script>
-    <script src="js/main.js"></script>
+
+    <script src="js/config.js"></script>
     <script>
+        const API_BASE_URL = Config.getApiUrl();
+        
         function selectPayment(method) {
             document.querySelectorAll('.payment-option').forEach(opt => {
                 opt.classList.remove('selected');

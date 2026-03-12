@@ -4,7 +4,7 @@
 
 class CartSystem {
     constructor() {
-        this.apiUrl = 'https://ajab-flour-hub.onrender.com/api';
+        this.apiUrl = window.Config ? Config.getApiUrl() + '/api' : 'http://localhost:5300/api';
         this.items = [];
         this.total = 0;
         this.user = null;
@@ -44,26 +44,28 @@ class CartSystem {
     }
     
     async syncWithServer() {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        try {
-            const response = await fetch(`${this.apiUrl}/cart`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.cart) {
-                    this.mergeCarts(data.cart.items);
-                }
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await fetch(`${this.apiUrl}/cart`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
-        } catch (error) {
-            console.log('Server sync failed, using local cart');
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.cart) {
+                this.mergeCarts(data.cart.items);
+            }
+        } else if (response.status === 403) {
+            console.log('Not authenticated for cart sync');
         }
+    } catch (error) {
+        console.log('Server sync failed, using local cart');
     }
+}
     
     mergeCarts(serverItems) {
         // Create a map of local items

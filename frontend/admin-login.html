@@ -168,9 +168,10 @@
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script>
        // Replace the entire JavaScript in admin-login.html with this:
-const API_BASE_URL = 'https://your-backend-name.onrender.com';
+const API_BASE_URL =  Config.getApiUrl();
 
 document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
