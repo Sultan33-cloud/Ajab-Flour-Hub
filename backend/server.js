@@ -1,16 +1,16 @@
 // ============================================
-// AJAB FLOUR BACKEND SERVER - PORT 5300
+// AJAB FLOUR BACKEND SERVER - FIXED VERSION
 // ============================================
 
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors');  // ← DECLARE CORS ONLY ONCE AT THE TOP!
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Database = require('./database');
 require('dotenv').config();
 
 const app = express();
-const PORT = 5300; // Changed to 5300
+const PORT = process.env.PORT || 5300;
 const JWT_SECRET = process.env.JWT_SECRET || 'ajab_flour_secret_key_2024';
 
 // Initialize database
@@ -18,27 +18,25 @@ const db = new Database();
 let isDatabaseConnected = false;
 
 // ===== MIDDLEWARE SETUP =====
-// EMERGENCY CORS FIX - Allow all origins temporarily
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
-
-// Also keep your existing cors middleware as backup
-const cors = require('cors');
+// USE CORS - ONLY ONCE!
 app.use(cors({
-    origin: '*',
+    origin: [
+        'http://localhost:5500',
+        'http://127.0.0.1:5500',
+        'http://localhost:3300',
+        'http://127.0.0.1:3300',
+        'https://ajab-flour-hub.netlify.app',
+        'https://*.netlify.app'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
+app.use(express.json());
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
